@@ -7,7 +7,7 @@
 * **Gesture Recognition** via flex and force sensors embedded in wearable gloves
 * **Real-Time Haptic Feedback** delivered through a lightweight vibration-actuator vest
 * **Modular Architecture** using ESP32 microcontrollers and ROS integration
-* **Swarm Compatibility** tested with wheeled robot platforms (ROSbot 3 Pro)
+* **Swarm Compatibility** tested with wheeled robot platforms (ROSbot 2 Pro)
 * **Wireless Communication** using ESP-NOW and ESP32-to-RPi bridge
 * **Open Hardware + Software**: All schematics, firmware, and ROS packages included
 
