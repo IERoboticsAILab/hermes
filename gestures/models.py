@@ -19,7 +19,8 @@ class GestureEvent:
     R_posture: Optional[str] = None
     fsr: Optional[FsrEvent] = None
     fsr_sequence: Optional[List[FsrEvent]] = None
-    imu: Optional[Dict[str, float]] = None  # {"PITCH":..., "ROLL":..., "YAW":...}
+    imu_R: Optional[Dict[str, float]] = None  # {"PITCH":..., "ROLL":..., "YAW":...}
+    accel_L: Optional[Dict[str, float]] = None  # {"X":..., "Y":..., "Z":...}
     hold_ms: int = 0
 
 

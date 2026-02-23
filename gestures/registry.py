@@ -60,12 +60,29 @@ GROUP_BINDINGS = {
 # System-level Safety Commands (work across modes)
 # -----------------------------
 SAFETY_COMMANDS = {
-    "DEADMAN": {
-        "id": "safety.deadman",
-        "desc": "motion enabled only while held",
-        "gesture": {"R_fsr": {"finger": "INDEX", "action": "HOLD"}},
-        "effect": {"type": "gate_motion", "value": True},
-        "priority": 100,
+    "DEADMAN_IMU": {
+        "id": "safety.deadman_imu",
+        "desc": "deadman enabled unless left hand is palm-up (kills motion)",
+        "gesture": {
+            "L_accel_palm_up": {
+                "axis": "AZ",
+                # threshold in 'g' units if your accel is already in g.
+                # If your accel is in m/s^2, you can normalize in safety evaluator.
+                "threshold_g": 0.80,
+
+                # If palm-up produces AZ ~= -1g, set palm_up_az_sign = -1
+                # If palm-up produces AZ ~= +1g, set palm_up_az_sign = +1
+                "palm_up_az_sign": -1,
+
+                # Hysteresis to prevent flicker near boundary
+                "hysteresis_g": 0.10,
+
+                # Debounce time: palm-up must persist this long to disable
+                "debounce_ms": 120
+            }
+        },
+        "effect": {"type": "gate_motion_from_imu"},
+        "priority": 900,
     },
     "ESTOP": {
         "id": "safety.estop",

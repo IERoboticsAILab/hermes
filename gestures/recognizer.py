@@ -62,8 +62,13 @@ class GestureRecognizer:
         seq = fsr_out["sequence"]
 
         # IMU: default to right-hand IMU for driving
-        imu_raw = (raw.get("imu", {}).get("R") or {})
-        imu = self.imu_filter.update(imu_raw) if imu_raw else None
+        # Right IMU (filtered) for drive if present
+        imu_R_raw = (raw.get("imu", {}).get("R") or {})
+        imu_R = self.imu_filter.update(imu_R_raw) if imu_R_raw else None
+
+        # Left accel for deadman (MPU-6050)
+        accel_L = (raw.get("imu", {}).get("L") or None)
+
 
         # Compose event
         ev = GestureEvent(
