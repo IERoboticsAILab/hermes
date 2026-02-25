@@ -45,15 +45,15 @@ MODES = {
 # -----------------------------
 GROUP_BINDINGS = {
     # Single tap => A-D
-    ("R", "INDEX",  "TAP"):        "A",
-    ("R", "MIDDLE", "TAP"):        "B",
-    ("R", "RING",   "TAP"):        "C",
-    ("R", "PINKY",  "TAP"):        "D",
+    #("R", "INDEX",  "TAP"):        "A",
+    #("R", "MIDDLE", "TAP"):        "B",
+    #("R", "RING",   "TAP"):        "C",
+    #("R", "PINKY",  "TAP"):        "D",
     # Double tap => E-H
-    ("R", "INDEX",  "DOUBLE_TAP"): "E",
-    ("R", "MIDDLE", "DOUBLE_TAP"): "F",
-    ("R", "RING",   "DOUBLE_TAP"): "G",
-    ("R", "PINKY",  "DOUBLE_TAP"): "H",
+    ("R", "INDEX",  "DOUBLE_TAP"): "A",
+    ("R", "MIDDLE", "DOUBLE_TAP"): "B",
+    ("R", "RING",   "DOUBLE_TAP"): "C",
+    #("R", "PINKY",  "DOUBLE_TAP"): "H",
 }
 
 # -----------------------------
@@ -143,72 +143,67 @@ DRIVE_COMMANDS = {
 # Selection Mode commands
 # -----------------------------
 SELECTION_COMMANDS = {
-    "SELECT_GROUP": {
-        "id": "select.group",
-        "desc": "replace current selection with group A–H via fixed bindings",
-        "requires": {"mode": "SELECTION", "L_posture": "POINT"},
-        "gesture_map": GROUP_BINDINGS,
-        "effect": {"type": "select_group", "op": "replace"},
-    },
-    "TOGGLE_MEMBERSHIP_MODIFIER": {
-        "id": "select.toggle_modifier",
-        "desc": "while held, group taps toggle membership instead of replace",
-        "requires": {"mode": "SELECTION", "L_posture": "POINT"},
-        "gesture": {"L_fsr": {"finger": "INDEX", "action": "HOLD"}},
-        "effect": {"type": "modifier", "key": "selection_op", "value": "toggle"},
-    },
-    "SELECT_ALL": {
-        "id": "select.all",
-        "desc": "select all robots",
-        "requires": {"mode": "SELECTION", "L_posture": "POINT"},
-        # sequential chord, not scrolling
-        "gesture": {"R_fsr_sequence": [
-            {"finger": "INDEX", "action": "TAP"},
-            {"finger": "MIDDLE", "action": "TAP"},
-        ], "max_gap_ms": 400},
-        "effect": {"type": "select_all"},
-    },
-    "SELECT_NONE": {
-        "id": "select.none",
-        "desc": "clear selection",
-        "requires": {"mode": "SELECTION", "L_posture": "POINT"},
-        "gesture": {"R_fsr_sequence": [
-            {"finger": "RING", "action": "TAP"},
-            {"finger": "PINKY", "action": "TAP"},
-        ], "max_gap_ms": 400},
-        "effect": {"type": "select_none"},
-    },
-    "SELECT_NEAREST_IN_DIRECTION": {
-        "id": "select.nearest_direction",
-        "desc": "select nearest robot in direction of right-hand pointing",
-        "requires": {"mode": "SELECTION", "L_posture": "POINT"},
-        "gesture": {"R_fsr": {"finger": "INDEX", "action": "HOLD"}},
-        "inputs": {"imu": ["YAW", "PITCH"]},
-        "effect": {"type": "select_by_cone", "cone_deg": 25, "range_m": 999},
-    },
-    "LASSO_SELECT_SWEEP": {
-        "id": "select.lasso_sweep",
-        "desc": "select robots in swept arc while holding",
-        "requires": {"mode": "SELECTION", "L_posture": "POINT"},
-        "gesture": {"R_fsr": {"finger": "MIDDLE", "action": "HOLD"}},
-        "inputs": {"imu": ["YAW"]},
-        "effect": {"type": "select_by_sweep_arc", "min_arc_deg": 15},
-    },
-    "SAVE_SELECTION_TO_GROUP": {
-        "id": "select.save_group",
-        "desc": "save current selection into a group slot A–H",
-        "requires": {"mode": "SELECTION", "L_posture": "POINT"},
-        "gesture": {"L_fsr": {"finger": "RING", "action": "HOLD"}},
-        "gesture_map": GROUP_BINDINGS,  # right-hand tap chooses target group slot
-        "effect": {"type": "save_selection_to_group"},
-    },
-    "RECALL_LAST_SELECTION": {
-        "id": "select.recall_last",
-        "desc": "recall last selection set",
-        "requires": {"mode": "SELECTION", "L_posture": "POINT"},
-        "gesture": {"R_fsr": {"finger": "PINKY", "action": "HOLD"}},
-        "effect": {"type": "recall_last_selection"},
-    },
+
+    # Robot selection mapping (Right hand):
+    # Tap => robots 1-4
+    # Hold => robots 5-8
+    ROBOT_BINDINGS = {
+        ("R", "INDEX",  "TAP"):  "R1",
+        ("R", "MIDDLE", "TAP"):  "R2",
+        ("R", "RING",   "TAP"):  "R3",
+        ("R", "PINKY",  "TAP"):  "R4",
+
+        ("R", "INDEX",  "HOLD"): "R5",
+        ("R", "MIDDLE", "HOLD"): "R6",
+        ("R", "RING",   "HOLD"): "R7",
+        ("R", "PINKY",  "HOLD"): "R8",
+    }
+
+    # Group selection mapping (Right hand double tap):
+    GROUP_SELECT_BINDINGS = {
+        ("R", "INDEX",  "DOUBLE_TAP"): "A",
+        ("R", "MIDDLE", "DOUBLE_TAP"): "B",
+        ("R", "RING",   "DOUBLE_TAP"): "C",
+    }
+
+    SELECTION_COMMANDS = {
+        # 1) Select an individual robot (tap/hold on right hand)
+        "SELECT_ROBOT": {
+            "id": "select.robot",
+            "desc": "select individual robot using right FSR tap/hold (R1-8)",
+            "requires": {"mode": "SELECTION", "L_posture": "POINT"},
+            "gesture_map": ROBOT_BINDINGS,
+            # controller decides replace/toggle behavior; default replace unless you add a modifier
+            "effect": {"type": "select_robot"},
+        },
+
+        # 2) Choose a group (double tap on right hand: A/B/C)
+        "SELECT_GROUP": {
+            "id": "select.group",
+            "desc": "select group A-C using right FSR double tap",
+            "requires": {"mode": "SELECTION", "L_posture": "POINT"},
+            "gesture_map": GROUP_SELECT_BINDINGS,
+            "effect": {"type": "select_group"},
+        },
+
+        # 3) Arm/set-groups mode (left middle hold)
+        "SET_GROUPS_ARM": {
+            "id": "select.set_groups_arm",
+            "desc": "arm group-setting mode (FSR-M-L hold)",
+            "requires": {"mode": "SELECTION", "L_posture": "POINT"},
+            "gesture": {"L_fsr": {"finger": "MIDDLE", "action": "HOLD"}},
+            "effect": {"type": "arm_group_setting", "value": True},
+        },
+
+        # 4) Confirm groups (left ring hold)
+        "CONFIRM_GROUPS": {
+            "id": "select.confirm_groups",
+            "desc": "confirm/commit group setting (FSR-R-L hold)",
+            "requires": {"mode": "SELECTION", "L_posture": "POINT"},
+            "gesture": {"L_fsr": {"finger": "RING", "action": "HOLD"}},
+            "effect": {"type": "confirm_group_setting"},
+        },
+    }
 }
 
 # -----------------------------
@@ -271,7 +266,7 @@ FORMATION_COMMANDS = {
         "id": "formation.break",
         "desc": "break formation but keep selection",
         "requires": {"mode": "FORMATION", "L_posture": "FIST"},
-        "gesture": {"R_fsr": {"finger": "MIDDLE", "action": "DOUBLE_TAP"}},
+        "gesture": {"R_fsr": {"finger": "PINKY", "action": "HOLD"}, "min_hold_ms": 500},
         "effect": {"type": "break_formation", "value": resolved},
     },
 }
