@@ -1,7 +1,7 @@
 # gestures/fsr_tracker.py
 from dataclasses import dataclass
 from typing import Dict, Optional, List, Tuple
-from gestures.models import FsrEvent
+from hermes_control.gestures.models import FsrEvent
 
 
 @dataclass

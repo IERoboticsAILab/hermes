@@ -3,7 +3,7 @@ import math
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
-from gestures.models import GestureEvent, GestureState
+from hermes_control.gestures.models import GestureEvent, GestureState
 
 
 def _norm3(x: float, y: float, z: float) -> float:

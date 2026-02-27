@@ -2,7 +2,7 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-from swarm.formation_engine import FormationParams, compute_formation_targets
+from hermes_control.swarm.formation_engine import FormationParams, compute_formation_targets
 
 
 @dataclass

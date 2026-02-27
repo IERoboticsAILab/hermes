@@ -1,7 +1,7 @@
 # gestures/matcher.py
 from typing import Any, Dict, Optional, Tuple
 
-from gestures.models import FsrEvent, GestureEvent, GestureState
+from hermes_control.gestures.models import FsrEvent, GestureEvent, GestureState
 
 
 def _fsr_tuple(f: FsrEvent) -> Tuple[str, str, str]:

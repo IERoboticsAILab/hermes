@@ -2,10 +2,10 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
 
-from gestures.fsr_tracker import FsrConfig, FsrTracker
-from gestures.imu_filter import ImuFilter, ImuFilterConfig
-from gestures.models import GestureEvent
-from gestures.posture_classifier import PostureCalibration, PostureClassifier
+from hermes_control.gestures.fsr_tracker import FsrConfig, FsrTracker
+from hermes_control.gestures.imu_filter import ImuFilter, ImuFilterConfig
+from hermes_control.gestures.models import GestureEvent
+from hermes_control.gestures.posture_classifier import PostureCalibration, PostureClassifier
 
 
 @dataclass
