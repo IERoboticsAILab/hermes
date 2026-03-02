@@ -6,7 +6,7 @@ import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import serial
 
@@ -33,6 +33,10 @@ DEFAULT_CONFIG = {
         "mode": "print",  # print | udp
         "udp_host": "192.168.1.200",
         "udp_port": 5005,
+    },
+    "behavior_runtime": {
+        "home_xy": [0.0, 0.0],
+        "path_waypoints": [],
     },
 }
 
@@ -84,6 +88,7 @@ class SwarmCommandAdapter:
                 "formation_spacing": swarm.formation_spacing,
                 "active_behavior": swarm.active_behavior,
                 "behavior_params": swarm.behavior_params,
+                "last_targets": swarm.last_targets,
             }
         )
 
@@ -146,6 +151,7 @@ class SwarmCommandAdapter:
                     "command_id": command_id,
                     "behavior": swarm.active_behavior,
                     "behavior_params": swarm.behavior_params,
+                    "targets": swarm.last_targets,
                 }
             )
             return
@@ -190,7 +196,36 @@ class HermesGateway:
         self.recognizer = GestureRecognizer()
         self.safety = SafetyEvaluator()
         self.swarm = SwarmController(robot_ids=robot_ids)
+        self._apply_behavior_runtime(config.get("behavior_runtime", {}))
         self.adapter = SwarmCommandAdapter(config.get("command_output", {}))
+
+    @staticmethod
+    def _xy_pair(value: Any, default: Tuple[float, float]) -> Tuple[float, float]:
+        if isinstance(value, (list, tuple)) and len(value) >= 2:
+            return (float(value[0]), float(value[1]))
+        if isinstance(value, dict) and "x" in value and "y" in value:
+            return (float(value["x"]), float(value["y"]))
+        return default
+
+    @staticmethod
+    def _parse_path_waypoints(value: Any) -> List[Tuple[float, float]]:
+        if not isinstance(value, list):
+            return []
+
+        out: List[Tuple[float, float]] = []
+        for item in value:
+            if isinstance(item, (list, tuple)) and len(item) >= 2:
+                out.append((float(item[0]), float(item[1])))
+                continue
+            if isinstance(item, dict) and "x" in item and "y" in item:
+                out.append((float(item["x"]), float(item["y"])))
+        return out
+
+    def _apply_behavior_runtime(self, runtime_cfg: Any) -> None:
+        if not isinstance(runtime_cfg, dict):
+            return
+        self.swarm.home_xy = self._xy_pair(runtime_cfg.get("home_xy"), self.swarm.home_xy)
+        self.swarm.path_waypoints = self._parse_path_waypoints(runtime_cfg.get("path_waypoints"))
 
     @staticmethod
     def _now_ms() -> int:

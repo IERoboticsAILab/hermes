@@ -83,6 +83,8 @@ Edit:
   - output mode (`print` or `udp`)
   - optional UDP target
   - `robot_ids` defaults to `r1`-`r8`
+  - `behavior_runtime.home_xy` for `RETURN_HOME`
+  - `behavior_runtime.path_waypoints` for `FOLLOW_PATH` / `FOLLOW_PATH_LOOP`
 
 ### 3) Run gateway
 
@@ -105,3 +107,4 @@ python3 hermes_gateway.py --config config.example.json
 - Right glove pin mappings and thresholds are placeholders; update them to your real wiring.
 - MPU6050 IMU read functions are implemented in both glove firmware files; adjust I2C pins/config if your hardware differs.
 - Selection group slots are currently `A`-`G` (7 groups), and robot bindings cover `r1`-`r8`.
+- `FOLLOW_ME_TOGGLE` now behaves as a true toggle (first gesture enables, next gesture disables).

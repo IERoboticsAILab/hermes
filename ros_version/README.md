@@ -9,8 +9,12 @@ The original code at the repo root is unchanged.
 - `hermes_control/gestures/`: duplicated gesture pipeline modules
 - `hermes_control/swarm/`: duplicated swarm modules
 - `hermes_control/gesture_pipeline_node.py`: raw JSON -> command packet publisher
-- `hermes_control/swarm_control_node.py`: command packet consumer -> swarm state publisher
+- `hermes_control/swarm_control_node.py`: command packet consumer -> swarm state + swarm intent publisher
+- `hermes_control/decentralized_robot_agent_node.py`: per-robot local executor (`swarm_intent` + peer states -> local `/cmd_vel`)
+- `hermes_control/robot_state_beacon_node.py`: per-robot odometry beacon publisher
 - `launch/hermes_ros.launch.py`: launches both nodes
+- `launch/robot_agent.launch.py`: launches one robot beacon + one robot local agent
+- `launch/hermes_decentralized.launch.py`: full single-machine demo stack (pipeline + control + one robot agent)
 
 ## Build
 
@@ -28,6 +32,28 @@ source install/setup.bash
 ros2 launch hermes_control hermes_ros.launch.py
 ```
 
+## Decentralized Option (DDS Intent Broadcast)
+
+This mode keeps the command intent centralized, but target computation + control local on each robot:
+
+1. Operator side publishes high-level `/hermes/swarm_intent`.
+2. Every robot publishes its own pose beacon to `/hermes/robot_state_beacon`.
+3. Every robot runs `decentralized_robot_agent_node`, computes the same target map locally, and applies only its own target to `/cmd_vel`.
+
+### Operator side (once)
+
+```bash
+ros2 launch hermes_control hermes_ros.launch.py
+```
+
+### Each robot side (one instance per robot)
+
+```bash
+ros2 launch hermes_control robot_agent.launch.py robot_id:=r3 odom_topic:=/r3/odom cmd_vel_topic:=/r3/cmd_vel
+```
+
+For multi-robot, run one `robot_agent.launch.py` per robot with that robot's IDs/topics.
+
 ## Topics
 
 ### Inputs
@@ -40,6 +66,43 @@ ros2 launch hermes_control hermes_ros.launch.py
 - `/hermes/command_packets` (`std_msgs/String`): JSON command packets emitted by gesture pipeline.
 - `/hermes/gesture_state` (`std_msgs/String`): JSON snapshot of gesture state.
 - `/hermes/swarm_state` (`std_msgs/String`): JSON snapshot of swarm + mirrored gesture state.
+- `/hermes/swarm_intent` (`std_msgs/String`): JSON swarm intent used by decentralized robot agents.
+- `/hermes/robot_state_beacon` (`std_msgs/String`): per-robot JSON pose beacons.
+
+## JSON Contracts
+
+### `/hermes/swarm_intent`
+
+```json
+{
+  "schema": "hermes.swarm_intent.v1",
+  "seq": 1,
+  "mode": "FORMATION",
+  "deadman_active": true,
+  "paused": false,
+  "selection": ["r1", "r2"],
+  "active_formation_type": "WEDGE",
+  "formation_heading": 0.4,
+  "formation_spacing": 1.0,
+  "active_behavior": null,
+  "behavior_params": {},
+  "home_xy": {"x": 0.0, "y": 0.0},
+  "path_waypoints": [],
+  "drive_cmd_vel": {}
+}
+```
+
+### `/hermes/robot_state_beacon`
+
+```json
+{
+  "schema": "hermes.robot_state_beacon.v1",
+  "robot_id": "r3",
+  "x": 1.2,
+  "y": -0.4,
+  "yaw": 0.15
+}
+```
 
 ## Current Defaults
 

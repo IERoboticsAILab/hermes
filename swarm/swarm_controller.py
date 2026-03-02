@@ -2,6 +2,7 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set, Tuple
 
+from swarm.behavior_engine import execute_behavior
 from swarm.formation_engine import FormationParams, compute_formation_targets
 
 
@@ -18,6 +19,9 @@ class SwarmController:
     active_formation_type: Optional[str] = None
     formation_heading: float = 0.0
     formation_spacing: float = 1.0
+    home_xy: Tuple[float, float] = (0.0, 0.0)
+    path_waypoints: List[Tuple[float, float]] = field(default_factory=list)
+    follow_me_enabled: bool = False
 
     active_behavior: Optional[str] = None
     behavior_params: Dict[str, Any] = field(default_factory=dict)
@@ -35,6 +39,7 @@ class SwarmController:
         effect = packet.get("effect", {})
         etype = effect.get("type")
         resolved = packet.get("resolved", {})
+        target_centroid = centroid_xy if centroid_xy is not None else (0.0, 0.0)
 
         if etype == "gate_motion":
             gesture_state.deadman_active = bool(effect.get("value", True))
@@ -92,7 +97,7 @@ class SwarmController:
             if key == "spacing_level":
                 self.formation_spacing = self._spacing_m_for_level(int(gesture_state.params[key]))
             if self.active_behavior and key in {"speed_level", "spacing_level", "aggression_level"}:
-                self._refresh_behavior_params(gesture_state)
+                self._refresh_behavior_params(gesture_state, target_centroid)
             return
 
         if etype == "step_param":
@@ -112,7 +117,7 @@ class SwarmController:
             if key == "spacing_level":
                 self.formation_spacing = self._spacing_m_for_level(int(gesture_state.params[key]))
             if self.active_behavior and key in {"speed_level", "spacing_level", "aggression_level"}:
-                self._refresh_behavior_params(gesture_state)
+                self._refresh_behavior_params(gesture_state, target_centroid)
             return
 
         if etype == "cmd_vel_stream":
@@ -136,6 +141,8 @@ class SwarmController:
             else:
                 # Outside group assignment workflow, keep robot selection simple.
                 self._set_selection({rid})
+            if self.active_behavior:
+                self._refresh_behavior_params(gesture_state, target_centroid)
             return
 
         if etype == "select_group":
@@ -144,18 +151,24 @@ class SwarmController:
             if self.active_group_edit:
                 gesture_state.modifiers["group_edit_active"] = True
                 gesture_state.modifiers["group_edit_name"] = self.active_group_edit
+            if self.active_behavior:
+                self._refresh_behavior_params(gesture_state, target_centroid)
             return
 
         if etype == "confirm_group_assignment":
             self._confirm_group_assignment()
             gesture_state.modifiers["group_edit_active"] = False
             gesture_state.modifiers.pop("group_edit_name", None)
+            if self.active_behavior:
+                self._refresh_behavior_params(gesture_state, target_centroid)
             return
 
         if etype == "cancel_group_assignment":
             self._cancel_group_assignment()
             gesture_state.modifiers["group_edit_active"] = False
             gesture_state.modifiers.pop("group_edit_name", None)
+            if self.active_behavior:
+                self._refresh_behavior_params(gesture_state, target_centroid)
             return
 
         # Formation
@@ -174,7 +187,7 @@ class SwarmController:
                 self.formation_spacing = max(0.2, float(value))
                 gesture_state.params["spacing_level"] = self._spacing_level_from_m(self.formation_spacing)
             if self.active_behavior and key in {"formation_heading", "formation_spacing"}:
-                self._refresh_behavior_params(gesture_state)
+                self._refresh_behavior_params(gesture_state, target_centroid)
             return
 
         if etype == "apply_formation":
@@ -185,7 +198,6 @@ class SwarmController:
             if not self.active_formation_type:
                 return
 
-            cx, cy = centroid_xy if centroid_xy is not None else (0.0, 0.0)
             params = FormationParams(
                 spacing_m=float(self.formation_spacing),
                 heading_rad=float(self.formation_heading),
@@ -193,7 +205,7 @@ class SwarmController:
             self.last_targets = compute_formation_targets(
                 self.active_formation_type,
                 list(self.selection),
-                centroid_xy=(cx, cy),
+                centroid_xy=target_centroid,
                 params=params,
             )
             return
@@ -205,10 +217,30 @@ class SwarmController:
 
         # Behavior
         if etype == "start_behavior":
-            behavior_name = resolved.get("binding")
-            if behavior_name:
-                self.active_behavior = behavior_name
-                self._refresh_behavior_params(gesture_state)
+            behavior_name = str(resolved.get("binding") or "")
+            if not behavior_name:
+                return
+
+            if behavior_name == "FOLLOW_ME_TOGGLE":
+                self.follow_me_enabled = not self.follow_me_enabled
+                if self.follow_me_enabled:
+                    self.active_behavior = behavior_name
+                    self._refresh_behavior_params(gesture_state, target_centroid)
+                else:
+                    if self.active_behavior == "FOLLOW_ME_TOGGLE":
+                        self.active_behavior = None
+                    self.last_targets = {}
+                    self.behavior_params = {
+                        "behavior": "FOLLOW_ME_TOGGLE",
+                        "executor": "follow_me",
+                        "status": "disabled",
+                        "follow_me_enabled": False,
+                    }
+                return
+
+            self.follow_me_enabled = False
+            self.active_behavior = behavior_name
+            self._refresh_behavior_params(gesture_state, target_centroid)
             return
 
     def set_formation_heading(self, heading_rad: float) -> None:
@@ -316,19 +348,44 @@ class SwarmController:
         levels = [1, 2, 3, 4]
         return min(levels, key=lambda lvl: abs(cls._spacing_m_for_level(lvl) - float(spacing_m)))
 
-    def _refresh_behavior_params(self, gesture_state: Any) -> None:
+    def _refresh_behavior_params(
+        self,
+        gesture_state: Any,
+        centroid_xy: Optional[Tuple[float, float]] = None,
+    ) -> None:
         speed_level = self._clamp_level(gesture_state.params.get("speed_level", 2))
         spacing_level = self._clamp_level(gesture_state.params.get("spacing_level", 2))
         aggression_level = self._clamp_level(gesture_state.params.get("aggression_level", 2))
 
         self.behavior_params = {
+            "behavior": self.active_behavior,
             "speed_level": speed_level,
             "speed_scale": self._speed_scale_for_level(speed_level),
             "spacing_level": spacing_level,
             "spacing_m": float(self.formation_spacing),
+            "formation_heading": float(self.formation_heading),
             "aggression_level": aggression_level,
             "aggression_scale": self._aggression_scale_for_level(aggression_level),
+            "home_xy": {"x": float(self.home_xy[0]), "y": float(self.home_xy[1])},
+            "path_waypoints": [list(pt) for pt in self.path_waypoints],
+            "follow_me_enabled": bool(self.follow_me_enabled),
         }
+        if self.active_behavior:
+            self._execute_active_behavior(centroid_xy if centroid_xy is not None else (0.0, 0.0))
+
+    def _execute_active_behavior(self, centroid_xy: Tuple[float, float]) -> None:
+        result = execute_behavior(
+            behavior_name=str(self.active_behavior),
+            robot_ids=sorted(self.selection),
+            centroid_xy=centroid_xy,
+            behavior_params=self.behavior_params,
+            heading_rad=float(self.formation_heading),
+            home_xy=self.home_xy,
+            previous_targets=self.last_targets,
+            active_formation_type=self.active_formation_type,
+        )
+        self.last_targets = dict(result.targets)
+        self.behavior_params.update(result.metadata)
 
     def _stop_all(self) -> None:
         self.paused = False
@@ -340,3 +397,4 @@ class SwarmController:
         self.last_cmd_vel = {}
         self.active_group_edit = None
         self.pending_group_members = set()
+        self.follow_me_enabled = False

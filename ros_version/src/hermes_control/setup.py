@@ -9,7 +9,14 @@ setup(
     data_files=[
         ("share/ament_index/resource_index/packages", [f"resource/{package_name}"]),
         (f"share/{package_name}", ["package.xml"]),
-        (f"share/{package_name}/launch", ["launch/hermes_ros.launch.py"]),
+        (
+            f"share/{package_name}/launch",
+            [
+                "launch/hermes_ros.launch.py",
+                "launch/hermes_decentralized.launch.py",
+                "launch/robot_agent.launch.py",
+            ],
+        ),
     ],
     install_requires=["setuptools"],
     zip_safe=True,
@@ -22,6 +29,8 @@ setup(
         "console_scripts": [
             "gesture_pipeline_node = hermes_control.gesture_pipeline_node:main",
             "swarm_control_node = hermes_control.swarm_control_node:main",
+            "decentralized_robot_agent_node = hermes_control.decentralized_robot_agent_node:main",
+            "robot_state_beacon_node = hermes_control.robot_state_beacon_node:main",
         ],
     },
 )
