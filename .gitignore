@@ -1,1 +1,5 @@
 draft_files/
+
+# Python bytecode/cache
+__pycache__/
+*.py[cod]
