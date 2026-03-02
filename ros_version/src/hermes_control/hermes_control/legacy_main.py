@@ -11,7 +11,7 @@ from hermes_control.swarm.swarm_controller import SwarmController
 state = GestureState()
 recognizer = GestureRecognizer()
 safety = SafetyEvaluator()
-swarm = SwarmController(robot_ids=["r1", "r2", "r3", "r4", "r5"])
+swarm = SwarmController(robot_ids=["r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8"])
 
 
 def loop_tick(raw: Dict[str, Any], centroid_xy: Tuple[float, float] = (0.0, 0.0)) -> Dict[str, Optional[Dict[str, Any]]]:

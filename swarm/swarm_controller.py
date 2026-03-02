@@ -9,7 +9,7 @@ from swarm.formation_engine import FormationParams, compute_formation_targets
 class SwarmController:
     robot_ids: List[str]
     selection: Set[str] = field(default_factory=set)
-    groups: Dict[str, Set[str]] = field(default_factory=lambda: {k: set() for k in "ABCDEFGH"})
+    groups: Dict[str, Set[str]] = field(default_factory=lambda: {k: set() for k in "ABCDEFG"})
     last_selection: Set[str] = field(default_factory=set)
     active_group_edit: Optional[str] = None
     pending_group_members: Set[str] = field(default_factory=set)
@@ -87,6 +87,12 @@ class SwarmController:
             if not key:
                 return
             gesture_state.params[key] = effect.get("value")
+            if key in {"speed_level", "spacing_level", "aggression_level"}:
+                gesture_state.params[key] = self._clamp_level(gesture_state.params.get(key, 2))
+            if key == "spacing_level":
+                self.formation_spacing = self._spacing_m_for_level(int(gesture_state.params[key]))
+            if self.active_behavior and key in {"speed_level", "spacing_level", "aggression_level"}:
+                self._refresh_behavior_params(gesture_state)
             return
 
         if etype == "step_param":
@@ -101,6 +107,12 @@ class SwarmController:
             if "max" in effect:
                 nxt = min(int(effect["max"]), nxt)
             gesture_state.params[key] = nxt
+            if key in {"speed_level", "spacing_level", "aggression_level"}:
+                gesture_state.params[key] = self._clamp_level(gesture_state.params.get(key, 2))
+            if key == "spacing_level":
+                self.formation_spacing = self._spacing_m_for_level(int(gesture_state.params[key]))
+            if self.active_behavior and key in {"speed_level", "spacing_level", "aggression_level"}:
+                self._refresh_behavior_params(gesture_state)
             return
 
         if etype == "cmd_vel_stream":
@@ -160,6 +172,9 @@ class SwarmController:
                 self.formation_heading = float(value)
             elif key == "formation_spacing":
                 self.formation_spacing = max(0.2, float(value))
+                gesture_state.params["spacing_level"] = self._spacing_level_from_m(self.formation_spacing)
+            if self.active_behavior and key in {"formation_heading", "formation_spacing"}:
+                self._refresh_behavior_params(gesture_state)
             return
 
         if etype == "apply_formation":
@@ -193,6 +208,7 @@ class SwarmController:
             behavior_name = resolved.get("binding")
             if behavior_name:
                 self.active_behavior = behavior_name
+                self._refresh_behavior_params(gesture_state)
             return
 
     def set_formation_heading(self, heading_rad: float) -> None:
@@ -260,9 +276,64 @@ class SwarmController:
 
         return None
 
+    @staticmethod
+    def _clamp_level(value: Any, default: int = 2) -> int:
+        try:
+            level = int(value)
+        except (TypeError, ValueError):
+            return default
+        return max(1, min(4, level))
+
+    @staticmethod
+    def _speed_scale_for_level(level: int) -> float:
+        return {
+            1: 0.35,
+            2: 0.55,
+            3: 0.75,
+            4: 1.00,
+        }.get(level, 0.55)
+
+    @staticmethod
+    def _aggression_scale_for_level(level: int) -> float:
+        return {
+            1: 0.75,
+            2: 1.00,
+            3: 1.20,
+            4: 1.40,
+        }.get(level, 1.00)
+
+    @staticmethod
+    def _spacing_m_for_level(level: int) -> float:
+        return {
+            1: 0.70,
+            2: 1.00,
+            3: 1.30,
+            4: 1.60,
+        }.get(level, 1.00)
+
+    @classmethod
+    def _spacing_level_from_m(cls, spacing_m: float) -> int:
+        levels = [1, 2, 3, 4]
+        return min(levels, key=lambda lvl: abs(cls._spacing_m_for_level(lvl) - float(spacing_m)))
+
+    def _refresh_behavior_params(self, gesture_state: Any) -> None:
+        speed_level = self._clamp_level(gesture_state.params.get("speed_level", 2))
+        spacing_level = self._clamp_level(gesture_state.params.get("spacing_level", 2))
+        aggression_level = self._clamp_level(gesture_state.params.get("aggression_level", 2))
+
+        self.behavior_params = {
+            "speed_level": speed_level,
+            "speed_scale": self._speed_scale_for_level(speed_level),
+            "spacing_level": spacing_level,
+            "spacing_m": float(self.formation_spacing),
+            "aggression_level": aggression_level,
+            "aggression_scale": self._aggression_scale_for_level(aggression_level),
+        }
+
     def _stop_all(self) -> None:
         self.paused = False
         self.active_behavior = None
+        self.behavior_params = {}
         self.active_formation_type = None
         self.pending_formation_type = None
         self.last_targets = {}

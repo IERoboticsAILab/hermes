@@ -27,7 +27,7 @@ DEFAULT_CONFIG = {
     "serial_port": "/dev/ttyUSB0",
     "baudrate": 921600,
     "glove_timeout_ms": 200,
-    "robot_ids": ["r1", "r2", "r3", "r4", "r5"],
+    "robot_ids": ["r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8"],
     "centroid": [0.0, 0.0],
     "command_output": {
         "mode": "print",  # print | udp
@@ -58,6 +58,34 @@ class SwarmCommandAdapter:
             self.sock.sendto(line.encode("utf-8"), (self.udp_host, self.udp_port))
         else:
             print(f"[SWARM_CMD] {line}")
+
+    def _emit_state_update(
+        self,
+        command_id: Optional[str],
+        source_effect: str,
+        gesture_state: GestureState,
+        swarm: SwarmController,
+    ) -> None:
+        self._emit(
+            {
+                "type": "STATE_UPDATE",
+                "command_id": command_id,
+                "source_effect": source_effect,
+                "mode": gesture_state.mode,
+                "deadman_active": gesture_state.deadman_active,
+                "params": gesture_state.params,
+                "selection": sorted(swarm.selection),
+                "groups": {k: sorted(v) for k, v in swarm.groups.items()},
+                "active_group_edit": swarm.active_group_edit,
+                "pending_group_members": sorted(swarm.pending_group_members),
+                "active_formation_type": swarm.active_formation_type,
+                "pending_formation_type": swarm.pending_formation_type,
+                "formation_heading": swarm.formation_heading,
+                "formation_spacing": swarm.formation_spacing,
+                "active_behavior": swarm.active_behavior,
+                "behavior_params": swarm.behavior_params,
+            }
+        )
 
     def dispatch(
         self,
@@ -106,14 +134,30 @@ class SwarmCommandAdapter:
             )
             return
 
+        if etype == "break_formation":
+            self._emit({"type": "BREAK_FORMATION", "command_id": command_id})
+            self._emit_state_update(command_id, etype, gesture_state, swarm)
+            return
+
         if etype == "start_behavior":
             self._emit(
                 {
                     "type": "BEHAVIOR",
                     "command_id": command_id,
                     "behavior": swarm.active_behavior,
+                    "behavior_params": swarm.behavior_params,
                 }
             )
+            return
+
+        if etype == "confirm_group_assignment":
+            self._emit({"type": "GROUP_ASSIGNMENT_CONFIRMED", "command_id": command_id})
+            self._emit_state_update(command_id, etype, gesture_state, swarm)
+            return
+
+        if etype == "cancel_group_assignment":
+            self._emit({"type": "GROUP_ASSIGNMENT_CANCELED", "command_id": command_id})
+            self._emit_state_update(command_id, etype, gesture_state, swarm)
             return
 
         # Optional telemetry for parameter/state updates
@@ -126,20 +170,8 @@ class SwarmCommandAdapter:
             "set_param_stream",
             "select_group",
             "select_robot",
-            "select_all",
-            "select_none",
-            "recall_last_selection",
         }:
-            self._emit(
-                {
-                    "type": "STATE_UPDATE",
-                    "command_id": command_id,
-                    "mode": gesture_state.mode,
-                    "deadman_active": gesture_state.deadman_active,
-                    "params": gesture_state.params,
-                    "selection": sorted(swarm.selection),
-                }
-            )
+            self._emit_state_update(command_id, etype, gesture_state, swarm)
 
 
 class HermesGateway:
@@ -153,7 +185,7 @@ class HermesGateway:
         centroid = config.get("centroid", [0.0, 0.0])
         self.centroid_xy = (float(centroid[0]), float(centroid[1]))
 
-        robot_ids = [str(r) for r in config.get("robot_ids", ["r1", "r2", "r3", "r4", "r5"])]
+        robot_ids = [str(r) for r in config.get("robot_ids", ["r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8"])]
         self.gesture_state = GestureState()
         self.recognizer = GestureRecognizer()
         self.safety = SafetyEvaluator()

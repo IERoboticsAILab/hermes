@@ -17,7 +17,7 @@ class SwarmControlNode(Node):
         self.declare_parameter("packet_topic", "/hermes/command_packets")
         self.declare_parameter("centroid_topic", "/hermes/centroid")
         self.declare_parameter("swarm_state_topic", "/hermes/swarm_state")
-        self.declare_parameter("robot_ids", ["r1", "r2", "r3", "r4", "r5"])
+        self.declare_parameter("robot_ids", ["r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8"])
 
         packet_topic = str(self.get_parameter("packet_topic").value)
         centroid_topic = str(self.get_parameter("centroid_topic").value)

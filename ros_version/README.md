@@ -41,6 +41,11 @@ ros2 launch hermes_control hermes_ros.launch.py
 - `/hermes/gesture_state` (`std_msgs/String`): JSON snapshot of gesture state.
 - `/hermes/swarm_state` (`std_msgs/String`): JSON snapshot of swarm + mirrored gesture state.
 
+## Current Defaults
+
+- `robot_ids` default to `r1`-`r8`.
+- Selection groups are currently `A`-`G`.
+
 ## Example Raw Input
 
 ```json
@@ -55,7 +60,7 @@ ros2 launch hermes_control hermes_ros.launch.py
     "R": {"INDEX": false, "MIDDLE": false, "RING": false, "PINKY": false}
   },
   "imu": {
-    "R": {"PITCH": 0.2, "ROLL": 0.1, "YAW": -0.1},
+    "R": {"PITCH": 0.2, "ROLL": 0.1, "YAW": -0.1, "AX": 0.1, "AY": -0.2, "AZ": -1.1},
     "L": {"AX": 0.0, "AY": 0.0, "AZ": -1.0}
   }
 }

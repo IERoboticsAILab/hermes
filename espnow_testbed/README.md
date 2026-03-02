@@ -82,6 +82,7 @@ Edit:
   - serial port
   - output mode (`print` or `udp`)
   - optional UDP target
+  - `robot_ids` defaults to `r1`-`r8`
 
 ### 3) Run gateway
 
@@ -102,4 +103,5 @@ python3 hermes_gateway.py --config config.example.json
 - If either glove stream is stale (`glove_timeout_ms`), gateway forces deadman false for safety.
 - Left glove firmware currently assumes **no left FSR hardware** and sends flex + IMU only.
 - Right glove pin mappings and thresholds are placeholders; update them to your real wiring.
-- IMU read functions in glove firmware are stubbed; replace with your actual IMU driver calls.
+- MPU6050 IMU read functions are implemented in both glove firmware files; adjust I2C pins/config if your hardware differs.
+- Selection group slots are currently `A`-`G` (7 groups), and robot bindings cover `r1`-`r8`.

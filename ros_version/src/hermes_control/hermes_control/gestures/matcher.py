@@ -110,6 +110,30 @@ def _resolve_cmd_vel(cmd: Dict[str, Any], state: GestureState, event: GestureEve
         elif target:
             out[target] = value
 
+    # Global speed level scales translational and rotational command magnitudes.
+    speed_level = int(state.params.get("speed_level", 2))
+    speed_scale = {
+        1: 0.35,
+        2: 0.55,
+        3: 0.75,
+        4: 1.00,
+    }.get(speed_level, 0.55)
+    for key in ("vx", "vy", "omega", "steer"):
+        if key in out:
+            out[key] *= speed_scale
+
+    # Aggression level biases turning authority without changing straight-line speed.
+    aggression_level = int(state.params.get("aggression_level", 2))
+    turn_scale = {
+        1: 0.75,
+        2: 1.00,
+        3: 1.20,
+        4: 1.40,
+    }.get(aggression_level, 1.00)
+    for key in ("omega", "steer"):
+        if key in out:
+            out[key] *= turn_scale
+
     if state.params.get("precision_drive", False):
         for key in ("vx", "vy", "omega", "steer"):
             if key in out:
