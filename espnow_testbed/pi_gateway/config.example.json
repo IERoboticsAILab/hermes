@@ -1,0 +1,12 @@
+{
+  "serial_port": "/dev/ttyUSB0",
+  "baudrate": 921600,
+  "glove_timeout_ms": 200,
+  "robot_ids": ["r1", "r2", "r3", "r4", "r5"],
+  "centroid": [0.0, 0.0],
+  "command_output": {
+    "mode": "print",
+    "udp_host": "192.168.1.200",
+    "udp_port": 5005
+  }
+}

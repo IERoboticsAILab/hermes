@@ -1,0 +1,105 @@
+# ESP-NOW Testbed (Non-ROS)
+
+This folder is a standalone transmission + logic test path outside the ROS package.
+It keeps your original repo code and your ROS package untouched.
+
+## What is included
+
+- `firmware/glove_left/glove_left.ino`
+  - Left glove ESP32 firmware (reads sensors, sends JSON via ESP-NOW)
+- `firmware/glove_right/glove_right.ino`
+  - Right glove ESP32 firmware (reads sensors, sends JSON via ESP-NOW)
+- `firmware/hub_master/hub_master.ino`
+  - Hub ESP32 firmware (receives ESP-NOW from both gloves, forwards newline JSON over serial to Raspberry Pi)
+- `firmware/get_mac/get_mac.ino`
+  - Utility sketch to print ESP32 STA MAC address
+- `pi_gateway/hermes_gateway.py`
+  - Raspberry Pi script:
+    1. reads hub serial stream
+    2. fuses left+right glove packets
+    3. runs your existing gesture/safety/swarm logic
+    4. emits swarm commands (print or UDP)
+
+## MAC address placeholders (where to edit)
+
+### 1) Left glove firmware
+File: `firmware/glove_left/glove_left.ino`
+
+Edit this line with the HUB/master ESP32 MAC:
+
+```cpp
+static uint8_t HUB_MAC[6] = {0xAA, 0xBB, 0xCC, 0x11, 0x22, 0x33};
+```
+
+### 2) Right glove firmware
+File: `firmware/glove_right/glove_right.ino`
+
+Edit this line with the HUB/master ESP32 MAC:
+
+```cpp
+static uint8_t HUB_MAC[6] = {0xAA, 0xBB, 0xCC, 0x11, 0x22, 0x33};
+```
+
+### 3) Hub/master firmware
+File: `firmware/hub_master/hub_master.ino`
+
+Edit both glove MAC placeholders:
+
+```cpp
+static uint8_t LEFT_GLOVE_MAC[6]  = {0xAA, 0xBB, 0xCC, 0x44, 0x55, 0x66};
+static uint8_t RIGHT_GLOVE_MAC[6] = {0xAA, 0xBB, 0xCC, 0x77, 0x88, 0x99};
+```
+
+## How to get each ESP32 MAC address
+
+1. Flash `firmware/get_mac/get_mac.ino` to a board.
+2. Open serial monitor at `115200`.
+3. Note `ESP32 STA MAC: XX:XX:XX:XX:XX:XX`.
+4. Convert each byte to hex with `0x` prefix and place into arrays above.
+
+Example:
+- MAC `24:6F:28:AA:BB:CC` -> `{0x24, 0x6F, 0x28, 0xAA, 0xBB, 0xCC}`
+
+## Firmware dependencies
+
+Install in Arduino IDE (or PlatformIO):
+- `ArduinoJson`
+- ESP32 board support package (Espressif)
+
+## Raspberry Pi gateway setup
+
+### 1) Install Python dependency
+
+```bash
+cd espnow_testbed/pi_gateway
+python3 -m pip install -r requirements.txt
+```
+
+### 2) Configure gateway
+
+Edit:
+- `pi_gateway/config.example.json`
+  - serial port
+  - output mode (`print` or `udp`)
+  - optional UDP target
+
+### 3) Run gateway
+
+```bash
+cd espnow_testbed/pi_gateway
+python3 hermes_gateway.py --config config.example.json
+```
+
+## Data flow in this testbed
+
+1. Left/right glove ESP32 send JSON packets via ESP-NOW.
+2. Hub ESP32 validates sender MAC and forwards packet stream over USB serial.
+3. Pi gateway fuses left+right stream into the expected raw input shape.
+4. Pi gateway runs your current command logic and emits swarm command payloads.
+
+## Notes
+
+- If either glove stream is stale (`glove_timeout_ms`), gateway forces deadman false for safety.
+- Left glove firmware currently assumes **no left FSR hardware** and sends flex + IMU only.
+- Right glove pin mappings and thresholds are placeholders; update them to your real wiring.
+- IMU read functions in glove firmware are stubbed; replace with your actual IMU driver calls.

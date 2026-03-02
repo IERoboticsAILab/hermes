@@ -11,6 +11,8 @@ class SwarmController:
     selection: Set[str] = field(default_factory=set)
     groups: Dict[str, Set[str]] = field(default_factory=lambda: {k: set() for k in "ABCDEFGH"})
     last_selection: Set[str] = field(default_factory=set)
+    active_group_edit: Optional[str] = None
+    pending_group_members: Set[str] = field(default_factory=set)
 
     pending_formation_type: Optional[str] = None
     active_formation_type: Optional[str] = None
@@ -51,6 +53,8 @@ class SwarmController:
         if etype == "emergency_stop":
             self._stop_all()
             gesture_state.deadman_active = False
+            gesture_state.modifiers["group_edit_active"] = False
+            gesture_state.modifiers.pop("group_edit_name", None)
             return
 
         if etype == "toggle":
@@ -108,40 +112,38 @@ class SwarmController:
             rid = self._normalize_robot_id(resolved.get("binding"))
             if rid is None:
                 return
-            op = resolved.get("selection_op", "replace")
-            if op == "toggle":
-                sel = set(self.selection)
+            if self.active_group_edit:
+                # While editing a group slot, robot gestures toggle membership.
+                sel = set(self.pending_group_members)
                 if rid in sel:
                     sel.remove(rid)
                 else:
                     sel.add(rid)
+                self.pending_group_members = sel
                 self._set_selection(sel)
             else:
+                # Outside group assignment workflow, keep robot selection simple.
                 self._set_selection({rid})
             return
 
         if etype == "select_group":
             group_name = resolved.get("binding")
-            op = resolved.get("selection_op", "replace")
-            self._select_group(group_name, op=op)
+            self._start_group_assignment(group_name)
+            if self.active_group_edit:
+                gesture_state.modifiers["group_edit_active"] = True
+                gesture_state.modifiers["group_edit_name"] = self.active_group_edit
             return
 
-        if etype == "select_all":
-            self._set_selection(set(self.robot_ids))
+        if etype == "confirm_group_assignment":
+            self._confirm_group_assignment()
+            gesture_state.modifiers["group_edit_active"] = False
+            gesture_state.modifiers.pop("group_edit_name", None)
             return
 
-        if etype == "select_none":
-            self._set_selection(set())
-            return
-
-        if etype == "recall_last_selection":
-            self._set_selection(set(self.last_selection))
-            return
-
-        if etype == "save_selection_to_group":
-            group_name = resolved.get("binding")
-            if group_name:
-                self.groups[group_name] = set(self.selection)
+        if etype == "cancel_group_assignment":
+            self._cancel_group_assignment()
+            gesture_state.modifiers["group_edit_active"] = False
+            gesture_state.modifiers.pop("group_edit_name", None)
             return
 
         # Formation
@@ -206,6 +208,27 @@ class SwarmController:
         self.last_selection = set(self.selection)
         self.selection = normalized
 
+    def _start_group_assignment(self, group_name: Optional[str]) -> None:
+        if not group_name:
+            return
+        # Reselecting a group starts a fresh version of that group.
+        self.active_group_edit = str(group_name)
+        self.groups[self.active_group_edit] = set()
+        self.pending_group_members = set()
+        self._set_selection(set())
+
+    def _confirm_group_assignment(self) -> None:
+        if not self.active_group_edit:
+            return
+        self.groups[self.active_group_edit] = set(self.selection)
+        self.pending_group_members = set()
+        self.active_group_edit = None
+
+    def _cancel_group_assignment(self) -> None:
+        # Cancels group-edit mode while preserving the current robot selection.
+        self.pending_group_members = set()
+        self.active_group_edit = None
+
     def _select_group(self, group_name: Optional[str], op: str = "replace") -> None:
         if not group_name:
             return
@@ -244,3 +267,5 @@ class SwarmController:
         self.pending_formation_type = None
         self.last_targets = {}
         self.last_cmd_vel = {}
+        self.active_group_edit = None
+        self.pending_group_members = set()

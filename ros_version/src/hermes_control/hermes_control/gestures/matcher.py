@@ -147,8 +147,8 @@ def match_gesture(event: GestureEvent, state: GestureState, registry: Dict[str, 
     for cmd_key, cmd in safety_items:
         gesture_spec = cmd.get("gesture", {})
 
-        # DEADMAN_IMU is handled by SafetyEvaluator, not by gesture matcher.
-        if "L_accel_palm_up" in gesture_spec:
+        # Some safety gestures are handled by SafetyEvaluator, not by matcher.
+        if "L_accel_palm_up" in gesture_spec or "BOTH_ACCEL_SHAKE" in gesture_spec:
             continue
 
         if _match_simple_gesture(gesture_spec, event):
@@ -159,6 +159,16 @@ def match_gesture(event: GestureEvent, state: GestureState, registry: Dict[str, 
                 "effect": cmd["effect"],
                 "resolved": {},
             }
+
+    # Auto-cancel group edit session as soon as the left-hand posture leaves POINT.
+    if bool(state.modifiers.get("group_edit_active", False)) and state.mode != "SELECTION":
+        return {
+            "domain": "selection",
+            "command_key": "AUTO_CANCEL_GROUP_ASSIGNMENT",
+            "command_id": "select.cancel_group_assignment_auto",
+            "effect": {"type": "cancel_group_assignment"},
+            "resolved": {"reason": "left_posture_left_point"},
+        }
 
     mode_to_domain = {
         "DRIVE": "drive",
@@ -172,23 +182,19 @@ def match_gesture(event: GestureEvent, state: GestureState, registry: Dict[str, 
         return None
 
     commands = registry["commands"][domain]
-
-    # Selection modifier is stateful and should not emit a packet by itself.
-    if domain == "selection":
-        mod = commands.get("TOGGLE_MEMBERSHIP_MODIFIER")
-        if mod and event.fsr and _match_simple_gesture(mod["gesture"], event):
-            state.selection_op = "toggle"
-        elif (
-            event.fsr
-            and event.fsr.hand == "L"
-            and event.fsr.finger == "INDEX"
-            and event.fsr.action == "RELEASE"
-        ):
-            state.selection_op = "replace"
+    group_edit_active = bool(state.modifiers.get("group_edit_active", False)) if domain == "selection" else False
 
     for cmd_key, cmd in commands.items():
-        if cmd_key == "TOGGLE_MEMBERSHIP_MODIFIER":
-            continue
+        if domain == "selection":
+            cmd_id = cmd.get("id")
+            # Selection mode is two-phase:
+            # 1) choose group slot, 2) choose robots, 3) confirm.
+            if cmd_id == "select.group" and group_edit_active:
+                continue
+            if cmd_id == "select.robot" and not group_edit_active:
+                continue
+            if cmd_id == "select.confirm_group_assignment" and not group_edit_active:
+                continue
 
         req = cmd.get("requires", {})
         if req.get("mode") and req["mode"] != state.mode:
@@ -235,9 +241,6 @@ def match_gesture(event: GestureEvent, state: GestureState, registry: Dict[str, 
             if binding is None:
                 continue
             resolved["binding"] = binding
-
-            if cmd["id"] == "select.group":
-                resolved["selection_op"] = state.selection_op
 
             if cmd["effect"]["type"] == "set_state":
                 return {

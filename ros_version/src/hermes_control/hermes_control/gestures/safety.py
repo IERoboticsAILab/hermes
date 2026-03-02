@@ -21,6 +21,12 @@ class DeadmanImuLatch:
     palm_down_since_ms: Optional[int] = None
 
 
+@dataclass
+class ShakeEStopLatch:
+    above_since_ms: Optional[int] = None
+    fired: bool = False
+
+
 class SafetyEvaluator:
     """
     Evaluates safety commands (like IMU deadman) defined in
@@ -29,6 +35,7 @@ class SafetyEvaluator:
 
     def __init__(self):
         self.deadman_latch = DeadmanImuLatch()
+        self.shake_estop_latch = ShakeEStopLatch()
 
     def tick(
         self,
@@ -38,6 +45,10 @@ class SafetyEvaluator:
         now_ms: int,
     ) -> Optional[Dict[str, Any]]:
         safety_cmds = registry["commands"]["safety"]
+
+        estop_packet = self._tick_shake_estop(event, safety_cmds, now_ms)
+        if estop_packet:
+            return estop_packet
 
         cmd = safety_cmds.get("DEADMAN_IMU")
         if not cmd:
@@ -85,6 +96,63 @@ class SafetyEvaluator:
             self.deadman_latch.palm_up_since_ms = None
 
         return self._set_gate(gate_motion, cmd, state)
+
+    def _tick_shake_estop(
+        self,
+        event: GestureEvent,
+        safety_cmds: Dict[str, Any],
+        now_ms: int,
+    ) -> Optional[Dict[str, Any]]:
+        cmd = safety_cmds.get("ESTOP")
+        if not cmd:
+            return None
+
+        spec = cmd.get("gesture", {}).get("BOTH_ACCEL_SHAKE")
+        if spec is None:
+            return None
+
+        if not event.accel_L or not event.accel_R:
+            self.shake_estop_latch.above_since_ms = None
+            self.shake_estop_latch.fired = False
+            return None
+
+        threshold_g = float(spec.get("threshold_g", 0.75))
+        release_threshold_g = float(spec.get("release_threshold_g", threshold_g * 0.6))
+        hold_ms = int(spec.get("hold_ms", 220))
+
+        l_dyn = abs(_norm3(_axis(event.accel_L, "AX", "X"), _axis(event.accel_L, "AY", "Y"), _axis(event.accel_L, "AZ", "Z")) - 1.0)
+        r_dyn = abs(_norm3(_axis(event.accel_R, "AX", "X"), _axis(event.accel_R, "AY", "Y"), _axis(event.accel_R, "AZ", "Z")) - 1.0)
+
+        both_above = (l_dyn >= threshold_g) and (r_dyn >= threshold_g)
+        either_below_release = (l_dyn < release_threshold_g) or (r_dyn < release_threshold_g)
+
+        if both_above:
+            if self.shake_estop_latch.above_since_ms is None:
+                self.shake_estop_latch.above_since_ms = now_ms
+
+            dwell_ms = now_ms - self.shake_estop_latch.above_since_ms
+            if (not self.shake_estop_latch.fired) and dwell_ms >= hold_ms:
+                self.shake_estop_latch.fired = True
+                return {
+                    "domain": "safety",
+                    "command_key": "ESTOP",
+                    "command_id": cmd["id"],
+                    "effect": cmd["effect"],
+                    "resolved": {
+                        "source": "BOTH_ACCEL_SHAKE",
+                        "left_dyn_g": round(l_dyn, 3),
+                        "right_dyn_g": round(r_dyn, 3),
+                        "threshold_g": threshold_g,
+                        "hold_ms": hold_ms,
+                        "dwell_ms": dwell_ms,
+                    },
+                }
+        else:
+            self.shake_estop_latch.above_since_ms = None
+            if either_below_release:
+                self.shake_estop_latch.fired = False
+
+        return None
 
     def _set_gate(
         self,

@@ -46,11 +46,10 @@ GROUP_BINDINGS = {
     ("R", "MIDDLE", "TAP"): "B",
     ("R", "RING", "TAP"): "C",
     ("R", "PINKY", "TAP"): "D",
-    # Double tap => E-H
+    # Double tap => E-G
     ("R", "INDEX", "DOUBLE_TAP"): "E",
     ("R", "MIDDLE", "DOUBLE_TAP"): "F",
     ("R", "RING", "DOUBLE_TAP"): "G",
-    ("R", "PINKY", "DOUBLE_TAP"): "H",
 }
 
 ROBOT_BINDINGS = {
@@ -88,8 +87,14 @@ SAFETY_COMMANDS = {
     },
     "ESTOP": {
         "id": "safety.estop",
-        "desc": "immediate stop, cancel tasks",
-        "gesture": {"L_posture": "FIST", "R_posture": "FIST", "hold_ms": 1000},
+        "desc": "immediate stop on sustained high acceleration from both gloves (shake)",
+        "gesture": {
+            "BOTH_ACCEL_SHAKE": {
+                "threshold_g": 0.75,
+                "release_threshold_g": 0.35,
+                "hold_ms": 220,
+            }
+        },
         "effect": {"type": "emergency_stop"},
         "priority": 1000,
     },
@@ -154,50 +159,17 @@ SELECTION_COMMANDS = {
     },
     "SELECT_GROUP": {
         "id": "select.group",
-        "desc": "replace current selection with group A-H via fixed bindings",
+        "desc": "choose which group slot is being edited (group is reset for fresh assignment)",
         "requires": {"mode": "SELECTION", "L_posture": "POINT"},
         "gesture_map": GROUP_BINDINGS,
-        "effect": {"type": "select_group", "op": "replace"},
+        "effect": {"type": "select_group"},
     },
-    "TOGGLE_MEMBERSHIP_MODIFIER": {
-        "id": "select.toggle_modifier",
-        "desc": "while held, group taps toggle membership instead of replace",
+    "CONFIRM_GROUP_ASSIGNMENT": {
+        "id": "select.confirm_group_assignment",
+        "desc": "commit the currently selected robots to the active group slot",
         "requires": {"mode": "SELECTION", "L_posture": "POINT"},
-        "gesture": {"L_fsr": {"finger": "INDEX", "action": "HOLD"}},
-        "effect": {"type": "modifier", "key": "selection_op", "value": "toggle"},
-    },
-    "SELECT_ALL": {
-        "id": "select.all",
-        "desc": "select all robots",
-        "requires": {"mode": "SELECTION", "L_posture": "POINT"},
-        "gesture": {
-            "R_fsr_sequence": [
-                {"finger": "INDEX", "action": "TAP"},
-                {"finger": "MIDDLE", "action": "TAP"},
-            ],
-            "max_gap_ms": 400,
-        },
-        "effect": {"type": "select_all"},
-    },
-    "SELECT_NONE": {
-        "id": "select.none",
-        "desc": "clear selection",
-        "requires": {"mode": "SELECTION", "L_posture": "POINT"},
-        "gesture": {
-            "R_fsr_sequence": [
-                {"finger": "RING", "action": "TAP"},
-                {"finger": "PINKY", "action": "TAP"},
-            ],
-            "max_gap_ms": 400,
-        },
-        "effect": {"type": "select_none"},
-    },
-    "RECALL_LAST_SELECTION": {
-        "id": "select.recall_last",
-        "desc": "recall last selection set",
-        "requires": {"mode": "SELECTION", "L_posture": "POINT"},
-        "gesture": {"R_fsr": {"finger": "PINKY", "action": "HOLD"}},
-        "effect": {"type": "recall_last_selection"},
+        "gesture": {"R_fsr": {"finger": "PINKY", "action": "DOUBLE_TAP"}},
+        "effect": {"type": "confirm_group_assignment"},
     },
 }
 

@@ -30,9 +30,11 @@ class GestureRecognizer:
         "R": {"INDEX":bool,"MIDDLE":bool,"RING":bool,"PINKY":bool}
       },
       "imu": {
-        "R": {"PITCH":float,"ROLL":float,"YAW":float},
+        "R": {"PITCH":float,"ROLL":float,"YAW":float,"AX":float,"AY":float,"AZ":float},
         # Any of these are accepted for left acceleration payload:
-        "L": {"AX":float,"AY":float,"AZ":float}  # or X/Y/Z
+        "L": {"AX":float,"AY":float,"AZ":float},  # or X/Y/Z
+        # Optional explicit right acceleration payload:
+        "R_accel": {"AX":float,"AY":float,"AZ":float}  # or X/Y/Z
       }
     }
     """
@@ -57,6 +59,20 @@ class GestureRecognizer:
             "AZ": float(left.get("AZ", left.get("Z", 0.0))),
         }
 
+    def _coerce_right_accel(self, raw_imu: Dict[str, Any]) -> Optional[Dict[str, float]]:
+        right = raw_imu.get("R_accel") or raw_imu.get("R_ACCEL") or raw_imu.get("R")
+        if not isinstance(right, dict):
+            return None
+
+        if not any(k in right for k in ("AX", "AY", "AZ", "X", "Y", "Z")):
+            return None
+
+        return {
+            "AX": float(right.get("AX", right.get("X", 0.0))),
+            "AY": float(right.get("AY", right.get("Y", 0.0))),
+            "AZ": float(right.get("AZ", right.get("Z", 0.0))),
+        }
+
     def recognize(self, raw: Dict[str, Any]) -> GestureEvent:
         now_ms = int(raw["time_ms"])
 
@@ -79,6 +95,7 @@ class GestureRecognizer:
         imu_R_raw = imu_raw.get("R") or {}
         imu_R = self.imu_filter.update(imu_R_raw) if imu_R_raw else None
         accel_L = self._coerce_left_accel(imu_raw)
+        accel_R = self._coerce_right_accel(imu_raw)
 
         ev = GestureEvent(
             L_posture=L_posture,
@@ -87,6 +104,7 @@ class GestureRecognizer:
             fsr_sequence=seq,
             imu_R=imu_R,
             accel_L=accel_L,
+            accel_R=accel_R,
         )
 
         # HOLD events carry duration information used by hold_ms constraints.
