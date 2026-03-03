@@ -10,6 +10,10 @@ def generate_launch_description() -> LaunchDescription:
     cmd_vel_topic_arg = DeclareLaunchArgument("cmd_vel_topic", default_value="/cmd_vel")
     intent_topic_arg = DeclareLaunchArgument("intent_topic", default_value="/hermes/swarm_intent")
     robot_state_topic_arg = DeclareLaunchArgument("robot_state_topic", default_value="/hermes/robot_state_beacon")
+    global_frame_arg = DeclareLaunchArgument("global_frame", default_value="map")
+    base_frame_arg = DeclareLaunchArgument("base_frame", default_value="base_link")
+    use_tf_pose_arg = DeclareLaunchArgument("use_tf_pose", default_value="true")
+    fallback_to_odom_arg = DeclareLaunchArgument("fallback_to_odom", default_value="false")
 
     return LaunchDescription(
         [
@@ -18,6 +22,10 @@ def generate_launch_description() -> LaunchDescription:
             cmd_vel_topic_arg,
             intent_topic_arg,
             robot_state_topic_arg,
+            global_frame_arg,
+            base_frame_arg,
+            use_tf_pose_arg,
+            fallback_to_odom_arg,
             Node(
                 package="hermes_control",
                 executable="robot_state_beacon_node",
@@ -28,6 +36,10 @@ def generate_launch_description() -> LaunchDescription:
                         "robot_id": LaunchConfiguration("robot_id"),
                         "odom_topic": LaunchConfiguration("odom_topic"),
                         "state_topic": LaunchConfiguration("robot_state_topic"),
+                        "global_frame": LaunchConfiguration("global_frame"),
+                        "base_frame": LaunchConfiguration("base_frame"),
+                        "use_tf_pose": LaunchConfiguration("use_tf_pose"),
+                        "fallback_to_odom": LaunchConfiguration("fallback_to_odom"),
                     }
                 ],
             ),
@@ -43,6 +55,7 @@ def generate_launch_description() -> LaunchDescription:
                         "cmd_vel_topic": LaunchConfiguration("cmd_vel_topic"),
                         "intent_topic": LaunchConfiguration("intent_topic"),
                         "robot_states_topic": LaunchConfiguration("robot_state_topic"),
+                        "expected_state_frame": LaunchConfiguration("global_frame"),
                     }
                 ],
             ),

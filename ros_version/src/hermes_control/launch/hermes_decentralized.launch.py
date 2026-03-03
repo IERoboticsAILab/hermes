@@ -20,12 +20,36 @@ def generate_launch_description() -> LaunchDescription:
         default_value="/cmd_vel",
         description="Command velocity topic for this robot.",
     )
+    global_frame_arg = DeclareLaunchArgument(
+        "global_frame",
+        default_value="map",
+        description="Shared global frame for decentralized robot beacons.",
+    )
+    base_frame_arg = DeclareLaunchArgument(
+        "base_frame",
+        default_value="base_link",
+        description="Robot base frame for TF lookup.",
+    )
+    use_tf_pose_arg = DeclareLaunchArgument(
+        "use_tf_pose",
+        default_value="true",
+        description="Publish beacon from TF global_frame->base_frame transform.",
+    )
+    fallback_to_odom_arg = DeclareLaunchArgument(
+        "fallback_to_odom",
+        default_value="false",
+        description="Fallback to raw odometry if TF is unavailable.",
+    )
 
     return LaunchDescription(
         [
             robot_id_arg,
             odom_topic_arg,
             cmd_vel_topic_arg,
+            global_frame_arg,
+            base_frame_arg,
+            use_tf_pose_arg,
+            fallback_to_odom_arg,
             Node(
                 package="hermes_control",
                 executable="gesture_pipeline_node",
@@ -48,6 +72,7 @@ def generate_launch_description() -> LaunchDescription:
                         "robot_id": LaunchConfiguration("robot_id"),
                         "odom_topic": LaunchConfiguration("odom_topic"),
                         "cmd_vel_topic": LaunchConfiguration("cmd_vel_topic"),
+                        "expected_state_frame": LaunchConfiguration("global_frame"),
                     }
                 ],
             ),
@@ -60,6 +85,10 @@ def generate_launch_description() -> LaunchDescription:
                     {
                         "robot_id": LaunchConfiguration("robot_id"),
                         "odom_topic": LaunchConfiguration("odom_topic"),
+                        "global_frame": LaunchConfiguration("global_frame"),
+                        "base_frame": LaunchConfiguration("base_frame"),
+                        "use_tf_pose": LaunchConfiguration("use_tf_pose"),
+                        "fallback_to_odom": LaunchConfiguration("fallback_to_odom"),
                     }
                 ],
             ),

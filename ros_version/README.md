@@ -37,8 +37,8 @@ ros2 launch hermes_control hermes_ros.launch.py
 This mode keeps the command intent centralized, but target computation + control local on each robot:
 
 1. Operator side publishes high-level `/hermes/swarm_intent`.
-2. Every robot publishes its own pose beacon to `/hermes/robot_state_beacon`.
-3. Every robot runs `decentralized_robot_agent_node`, computes the same target map locally, and applies only its own target to `/cmd_vel`.
+2. Every robot publishes its own pose beacon to `/hermes/robot_state_beacon` in a shared frame (default `map`).
+3. Every robot runs `decentralized_robot_agent_node`, computes the same target map locally, uses distributed slot bidding (`/hermes/slot_bids`) for dynamic slot assignment, and applies only its own target to `/cmd_vel`.
 
 ### Operator side (once)
 
@@ -54,6 +54,19 @@ ros2 launch hermes_control robot_agent.launch.py robot_id:=r3 odom_topic:=/r3/od
 
 For multi-robot, run one `robot_agent.launch.py` per robot with that robot's IDs/topics.
 
+Important:
+- Robots must share one consistent frame (`map` recommended).
+- `robot_state_beacon_node` now uses TF lookup `map -> base_link` by default.
+- If TF is not ready yet, you can temporarily set `use_tf_pose:=false fallback_to_odom:=true` (not swarm-accurate across robots).
+
+Validation commands:
+
+```bash
+ros2 run tf2_ros tf2_echo map r3/base_link
+ros2 topic echo /hermes/robot_state_beacon
+ros2 topic echo /hermes/swarm_intent
+```
+
 ## Topics
 
 ### Inputs
@@ -68,6 +81,7 @@ For multi-robot, run one `robot_agent.launch.py` per robot with that robot's IDs
 - `/hermes/swarm_state` (`std_msgs/String`): JSON snapshot of swarm + mirrored gesture state.
 - `/hermes/swarm_intent` (`std_msgs/String`): JSON swarm intent used by decentralized robot agents.
 - `/hermes/robot_state_beacon` (`std_msgs/String`): per-robot JSON pose beacons.
+- `/hermes/slot_bids` (`std_msgs/String`): per-robot slot auction bids for dynamic reassignment.
 
 ## JSON Contracts
 
@@ -98,9 +112,28 @@ For multi-robot, run one `robot_agent.launch.py` per robot with that robot's IDs
 {
   "schema": "hermes.robot_state_beacon.v1",
   "robot_id": "r3",
+  "frame_id": "map",
   "x": 1.2,
   "y": -0.4,
-  "yaw": 0.15
+  "yaw": 0.15,
+  "vx": 0.10,
+  "vy": 0.00
+}
+```
+
+### `/hermes/slot_bids`
+
+```json
+{
+  "schema": "hermes.slot_bids.v1",
+  "intent_seq": 42,
+  "robot_id": "r3",
+  "selection": ["r1", "r2", "r3"],
+  "costs": {
+    "slot_000": 1.2,
+    "slot_001": 0.4,
+    "slot_002": 2.0
+  }
 }
 ```
 
