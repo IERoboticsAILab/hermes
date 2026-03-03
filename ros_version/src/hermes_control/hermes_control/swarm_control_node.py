@@ -18,12 +18,14 @@ class SwarmControlNode(Node):
         self.declare_parameter("centroid_topic", "/hermes/centroid")
         self.declare_parameter("swarm_state_topic", "/hermes/swarm_state")
         self.declare_parameter("swarm_intent_topic", "/hermes/swarm_intent")
+        self.declare_parameter("intent_hz", 10.0)
         self.declare_parameter("robot_ids", ["r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8"])
 
         packet_topic = str(self.get_parameter("packet_topic").value)
         centroid_topic = str(self.get_parameter("centroid_topic").value)
         swarm_state_topic = str(self.get_parameter("swarm_state_topic").value)
         swarm_intent_topic = str(self.get_parameter("swarm_intent_topic").value)
+        intent_hz = float(self.get_parameter("intent_hz").value)
         robot_ids = [str(v) for v in self.get_parameter("robot_ids").value]
 
         self._centroid: Tuple[float, float] = (0.0, 0.0)
@@ -35,6 +37,7 @@ class SwarmControlNode(Node):
         self._intent_pub = self.create_publisher(String, swarm_intent_topic, 20)
         self._packet_sub = self.create_subscription(String, packet_topic, self._on_packet, 50)
         self._centroid_sub = self.create_subscription(Point, centroid_topic, self._on_centroid, 20)
+        self._intent_timer = self.create_timer(max(0.02, 1.0 / max(1e-6, intent_hz)), self._publish_intent)
 
         self.get_logger().info(
             f"Swarm control ready. packet_topic={packet_topic}, centroid_topic={centroid_topic}, "
@@ -43,6 +46,7 @@ class SwarmControlNode(Node):
 
     def _on_centroid(self, msg: Point) -> None:
         self._centroid = (float(msg.x), float(msg.y))
+        self._publish_intent()
 
     def _decode_packet(self, data: str) -> Optional[Dict[str, Any]]:
         try:
@@ -82,7 +86,6 @@ class SwarmControlNode(Node):
         }
 
     def _intent_snapshot(self) -> Dict[str, Any]:
-        self._intent_seq += 1
         return {
             "type": "SWARM_INTENT",
             "schema": "hermes.swarm_intent.v1",
@@ -121,6 +124,7 @@ class SwarmControlNode(Node):
             return
 
         self._swarm.handle_packet(packet, self._gesture_state, centroid_xy=self._centroid)
+        self._intent_seq += 1
         self._publish_state()
         self._publish_intent()
 

@@ -49,6 +49,7 @@ class DecentralizedRobotAgentNode(Node):
         self.declare_parameter("stop_on_missing_intent_ms", 600)
         self.declare_parameter("stop_on_missing_states_ms", 600)
         self.declare_parameter("bid_timeout_ms", 400)
+        self.declare_parameter("bid_settle_ms", 180)
         self.declare_parameter("assignment_lock_ms", 1000)
         self.declare_parameter("kp_linear", 0.8)
         self.declare_parameter("kp_angular", 1.8)
@@ -83,6 +84,7 @@ class DecentralizedRobotAgentNode(Node):
         self._missing_intent_ms = int(self.get_parameter("stop_on_missing_intent_ms").value)
         self._missing_states_ms = int(self.get_parameter("stop_on_missing_states_ms").value)
         self._bid_timeout_ms = int(self.get_parameter("bid_timeout_ms").value)
+        self._bid_settle_ms = int(self.get_parameter("bid_settle_ms").value)
         self._assignment_lock_ms = int(self.get_parameter("assignment_lock_ms").value)
 
         self._kp_linear = _as_float(self.get_parameter("kp_linear").value, 0.8)
@@ -109,11 +111,13 @@ class DecentralizedRobotAgentNode(Node):
         self._intent: Optional[Dict[str, Any]] = None
         self._intent_rx_ns: int = 0
         self._robot_states: Dict[str, Dict[str, float]] = {}
+        self._robot_state_rx_ns: Dict[str, int] = {}
         self._states_rx_ns: int = 0
         self._self_pose: Optional[Tuple[float, float, float]] = None
         self._self_vel_world: Tuple[float, float] = (0.0, 0.0)
 
         self._slot_bid_book: Dict[int, Dict[str, Dict[str, Any]]] = {}
+        self._intent_seq_first_seen_ns: Dict[int, int] = {}
         self._assigned_slot: Optional[str] = None
         self._slot_lock_until_ns: int = 0
 
@@ -186,6 +190,8 @@ class DecentralizedRobotAgentNode(Node):
         except json.JSONDecodeError:
             return
 
+        now_ns = self._now_ns()
+
         # Accept either full map payload {"robots": {...}} or single-beacon payload.
         if "robot_id" in payload and "x" in payload and "y" in payload:
             frame_id = str(payload.get("frame_id", "")).strip()
@@ -199,9 +205,12 @@ class DecentralizedRobotAgentNode(Node):
                 "vx": _as_float(payload.get("vx"), 0.0),
                 "vy": _as_float(payload.get("vy"), 0.0),
             }
+            self._robot_state_rx_ns[rid] = now_ns
         else:
-            self._robot_states = self._normalize_state_map(payload)
-        self._states_rx_ns = self._now_ns()
+            normalized = self._normalize_state_map(payload)
+            self._robot_states = normalized
+            self._robot_state_rx_ns = {rid: now_ns for rid in normalized.keys()}
+        self._states_rx_ns = now_ns
 
     def _on_slot_bid(self, msg: String) -> None:
         try:
@@ -235,6 +244,7 @@ class DecentralizedRobotAgentNode(Node):
         if len(self._slot_bid_book) > 8:
             for old_seq in sorted(self._slot_bid_book.keys())[:-8]:
                 self._slot_bid_book.pop(old_seq, None)
+                self._intent_seq_first_seen_ns.pop(old_seq, None)
 
     def _on_odom(self, msg: Odometry) -> None:
         p = msg.pose.pose.position
@@ -257,10 +267,34 @@ class DecentralizedRobotAgentNode(Node):
             return []
         return sorted(str(r).strip().lower() for r in raw)
 
+    def _fresh_state_for(self, rid: str, now_ns: Optional[int] = None) -> Optional[Dict[str, float]]:
+        if now_ns is None:
+            now_ns = self._now_ns()
+        rx_ns = int(self._robot_state_rx_ns.get(rid, 0))
+        if rx_ns <= 0:
+            return None
+        age_ms = (now_ns - rx_ns) / 1_000_000.0
+        if age_ms > float(self._missing_states_ms):
+            return None
+        return self._robot_states.get(rid)
+
+    def _fresh_selection(self, selection: List[str], now_ns: Optional[int] = None) -> List[str]:
+        if now_ns is None:
+            now_ns = self._now_ns()
+        fresh: List[str] = []
+        for rid in selection:
+            if rid == self._robot_id:
+                fresh.append(rid)
+                continue
+            if self._fresh_state_for(rid, now_ns) is not None:
+                fresh.append(rid)
+        return sorted(set(fresh))
+
     def _centroid_from_state(self, ids: List[str], fallback: Tuple[float, float]) -> Tuple[float, float]:
+        now_ns = self._now_ns()
         pts: List[Tuple[float, float]] = []
         for rid in ids:
-            st = self._robot_states.get(rid)
+            st = self._fresh_state_for(rid, now_ns)
             if not st:
                 continue
             pts.append((st["x"], st["y"]))
@@ -373,9 +407,9 @@ class DecentralizedRobotAgentNode(Node):
         intent_seq: int,
         selection: List[str],
         slot_ids: List[str],
-    ) -> Dict[str, str]:
+    ) -> Tuple[Dict[str, str], bool]:
         if not selection or not slot_ids:
-            return {}
+            return {}, False
 
         fallback = {rid: sid for rid, sid in zip(sorted(selection), slot_ids)}
 
@@ -393,10 +427,14 @@ class DecentralizedRobotAgentNode(Node):
             if isinstance(costs, dict):
                 valid[rid] = {str(k): _as_float(v, 1e9) for k, v in costs.items()}
 
-        # Avoid noisy partial reassignment when bids are sparse.
-        min_required = max(2, len(selection) // 2)
-        if len(valid) < min_required:
-            return fallback
+        first_seen_ns = self._intent_seq_first_seen_ns.setdefault(intent_seq, now_ns)
+        settle_elapsed_ms = (now_ns - first_seen_ns) / 1_000_000.0
+
+        # Require complete bid set for stable decentralized assignment.
+        if len(valid) < len(selection):
+            if settle_elapsed_ms < float(self._bid_settle_ms):
+                return fallback, False
+            return fallback, False
 
         pairs: List[Tuple[float, str, str]] = []
         for rid in selection:
@@ -428,7 +466,7 @@ class DecentralizedRobotAgentNode(Node):
                 break
             assigned[rid] = remaining_slots.pop(0)
 
-        return assigned if len(assigned) == len(selection) else fallback
+        return (assigned if len(assigned) == len(selection) else fallback), True
 
     def _stable_own_slot(self, desired_slot: Optional[str]) -> Optional[str]:
         if desired_slot is None:
@@ -452,26 +490,29 @@ class DecentralizedRobotAgentNode(Node):
 
     def _publish_drive_stream(self, drive_cmd: Dict[str, Any]) -> None:
         vx = _as_float(drive_cmd.get("vx"), 0.0)
+        vy = _as_float(drive_cmd.get("vy"), 0.0)
         omega = _as_float(drive_cmd.get("omega"), _as_float(drive_cmd.get("steer"), 0.0))
         msg = Twist()
         msg.linear.x = _clamp(vx, -self._max_linear, self._max_linear)
+        msg.linear.y = _clamp(vy, -self._max_linear, self._max_linear)
         msg.angular.z = _clamp(omega, -self._max_angular, self._max_angular)
         self._cmd_pub.publish(msg)
 
     def _current_pose(self) -> Optional[Tuple[float, float, float]]:
         if self._self_pose is not None:
             return self._self_pose
-        own = self._robot_states.get(self._robot_id)
+        own = self._fresh_state_for(self._robot_id)
         if own is None:
             return None
         return (own["x"], own["y"], own["yaw"])
 
     def _neighbors(self, selection: List[str], own_x: float, own_y: float) -> List[Dict[str, float]]:
+        now_ns = self._now_ns()
         out: List[Dict[str, float]] = []
         for rid in selection:
             if rid == self._robot_id:
                 continue
-            st = self._robot_states.get(rid)
+            st = self._fresh_state_for(rid, now_ns)
             if not st:
                 continue
             dx = st["x"] - own_x
@@ -653,17 +694,33 @@ class DecentralizedRobotAgentNode(Node):
             self._publish_stop()
             return
 
-        slot_targets = self._compute_slot_targets(intent, selection)
+        now_ns = self._now_ns()
+        active_selection = self._fresh_selection(selection, now_ns)
+        if self._robot_id not in active_selection:
+            self._publish_stop()
+            self._assigned_slot = None
+            return
+
+        slot_targets = self._compute_slot_targets(intent, active_selection)
         if not slot_targets:
             self._publish_stop()
             return
 
         intent_seq = int(intent.get("seq", 0))
-        self._publish_slot_bid(intent_seq, selection, slot_targets)
+        self._intent_seq_first_seen_ns.setdefault(intent_seq, now_ns)
+        if len(self._intent_seq_first_seen_ns) > 8:
+            for old_seq in sorted(self._intent_seq_first_seen_ns.keys())[:-8]:
+                self._intent_seq_first_seen_ns.pop(old_seq, None)
+
+        self._publish_slot_bid(intent_seq, active_selection, slot_targets)
 
         slot_ids = sorted(slot_targets.keys())
-        assignment = self._resolve_assignment(intent_seq, selection, slot_ids)
-        desired_slot = assignment.get(self._robot_id)
+        assignment, bids_complete = self._resolve_assignment(intent_seq, active_selection, slot_ids)
+        if bids_complete:
+            desired_slot = assignment.get(self._robot_id)
+        else:
+            # Keep current slot while waiting for complete bids for this intent epoch.
+            desired_slot = self._assigned_slot or assignment.get(self._robot_id)
         own_slot = self._stable_own_slot(desired_slot)
         if own_slot is None:
             self._publish_stop()
@@ -674,7 +731,7 @@ class DecentralizedRobotAgentNode(Node):
             self._publish_stop()
             return
 
-        self._publish_target_tracking(own_target, selection)
+        self._publish_target_tracking(own_target, active_selection)
 
 
 def main(args: Optional[list[str]] = None) -> None:

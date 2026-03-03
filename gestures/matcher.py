@@ -8,6 +8,45 @@ def _fsr_tuple(f: FsrEvent) -> Tuple[str, str, str]:
     return (f.hand, f.finger, f.action)
 
 
+def _hold_latch_store(state: GestureState) -> Dict[str, bool]:
+    store = state.modifiers.get("_hold_latch")
+    if isinstance(store, dict):
+        return store
+    store = {}
+    state.modifiers["_hold_latch"] = store
+    return store
+
+
+def _clear_hold_latches_on_release(event: GestureEvent, state: GestureState) -> None:
+    if not event.fsr or event.fsr.action != "RELEASE":
+        return
+    store = _hold_latch_store(state)
+    suffix = f":{event.fsr.hand}:{event.fsr.finger}"
+    for token in list(store.keys()):
+        if token.endswith(suffix):
+            store.pop(token, None)
+
+
+def _hold_latch_token(
+    cmd: Dict[str, Any],
+    event: GestureEvent,
+    cmd_key: str,
+    binding: Optional[str] = None,
+) -> Optional[str]:
+    if not event.fsr or event.fsr.action != "HOLD":
+        return None
+
+    # Keep stream-like commands level-triggered; everything else is edge-triggered on HOLD.
+    effect_type = str(cmd.get("effect", {}).get("type", ""))
+    if effect_type in {"cmd_vel_stream", "set_param_stream", "set_while_held"}:
+        return None
+
+    command_id = str(cmd.get("id") or cmd_key)
+    if binding:
+        command_id = f"{command_id}:{binding}"
+    return f"{command_id}:{event.fsr.hand}:{event.fsr.finger}"
+
+
 def _inputs_available(cmd: Dict[str, Any], event: GestureEvent) -> bool:
     inputs = cmd.get("inputs")
     if not inputs:
@@ -160,6 +199,8 @@ def _resolve_stream_value(cmd: Dict[str, Any], event: GestureEvent) -> Optional[
 
 
 def match_gesture(event: GestureEvent, state: GestureState, registry: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    _clear_hold_latches_on_release(event, state)
+
     # Update mode from left-hand posture.
     mode = _mode_from_left_posture(registry, event.L_posture)
     if mode:
@@ -264,6 +305,14 @@ def match_gesture(event: GestureEvent, state: GestureState, registry: Dict[str, 
             binding = cmd["gesture_map"].get(key)
             if binding is None:
                 continue
+
+            token = _hold_latch_token(cmd, event, cmd_key, binding=str(binding))
+            if token:
+                store = _hold_latch_store(state)
+                if store.get(token):
+                    continue
+                store[token] = True
+
             resolved["binding"] = binding
 
             if cmd["effect"]["type"] == "set_state":
@@ -296,6 +345,13 @@ def match_gesture(event: GestureEvent, state: GestureState, registry: Dict[str, 
             if stream_value is None:
                 continue
             resolved["stream_value"] = stream_value
+
+        token = _hold_latch_token(cmd, event, cmd_key)
+        if token:
+            store = _hold_latch_store(state)
+            if store.get(token):
+                continue
+            store[token] = True
 
         return {
             "domain": domain,
