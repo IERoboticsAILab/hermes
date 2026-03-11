@@ -32,6 +32,42 @@ source install/setup.bash
 ros2 launch hermes_control hermes_ros.launch.py
 ```
 
+## Keyboard Teleop (No Gloves)
+
+Use this path to test command sending before glove hardware is ready:
+
+```bash
+ros2 launch hermes_control hermes_keyboard_teleop.launch.py
+```
+
+This launch starts:
+- `swarm_control_node` (builds and publishes `/hermes/swarm_intent`)
+- `keyboard_teleop_node` (publishes synthetic packets to `/hermes/command_packets`)
+
+Keyboard controls:
+- Global:
+  - `1` DRIVE mode
+  - `2` FORMATION mode
+  - `3` PARAMS mode
+  - `m` deadman on/off
+  - `g` select all robots (`r1`-`r8`)
+  - `space` send zero drive command
+  - `h` help
+- DRIVE mode:
+  - `w/s` forward/reverse
+  - `a/d` yaw left/right
+  - `q/e` strafe left/right
+  - `x` zero cmd_vel
+- FORMATION mode:
+  - `l` LINE
+  - `c` COLUMN
+  - `w` WEDGE
+  - `b` break formation
+- PARAMS mode:
+  - `w/s` speed level +/-
+  - `e/d` spacing level +/-
+  - `r/f` aggression level +/-
+
 ## Decentralized Option (DDS Intent Broadcast)
 
 This mode keeps the command intent centralized, but target computation + control local on each robot:
@@ -66,6 +102,44 @@ ros2 run tf2_ros tf2_echo map r3/base_link
 ros2 topic echo /hermes/robot_state_beacon
 ros2 topic echo /hermes/swarm_intent
 ```
+
+## Multi-ROSbot Test Procedure
+
+1. On operator machine (laptop/RPi with keyboard), run:
+
+```bash
+ros2 launch hermes_control hermes_keyboard_teleop.launch.py
+```
+
+2. On each ROSbot, run your base robot stack first (the stack that provides odometry and TF).
+   - Required outputs:
+     - odometry topic (for example `/r3/odom`)
+     - transform `map -> <robot_base_frame>` (recommended), or set fallback options below.
+
+3. On each ROSbot, run this package's robot-side nodes:
+
+```bash
+ros2 launch hermes_control robot_agent.launch.py \
+  robot_id:=r3 \
+  odom_topic:=/r3/odom \
+  cmd_vel_topic:=/r3/cmd_vel \
+  global_frame:=map \
+  base_frame:=r3/base_link \
+  use_tf_pose:=true \
+  fallback_to_odom:=false
+```
+
+4. Repeat step 3 with per-robot IDs/topics for every robot in the swarm.
+
+5. Verify command delivery:
+   - On any robot: `ros2 topic echo /hermes/swarm_intent`
+   - On any robot: `ros2 topic echo /hermes/slot_bids`
+   - On that robot: `ros2 topic echo /r3/cmd_vel`
+
+If TF global pose is not available yet, temporarily use:
+- `use_tf_pose:=false`
+- `fallback_to_odom:=true`
+This is useful for bring-up only and is less accurate for multi-robot relative geometry.
 
 ## Topics
 

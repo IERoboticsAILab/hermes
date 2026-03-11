@@ -14,6 +14,7 @@ setup(
             [
                 "launch/hermes_ros.launch.py",
                 "launch/hermes_decentralized.launch.py",
+                "launch/hermes_keyboard_teleop.launch.py",
                 "launch/robot_agent.launch.py",
             ],
         ),
@@ -29,6 +30,7 @@ setup(
         "console_scripts": [
             "gesture_pipeline_node = hermes_control.gesture_pipeline_node:main",
             "swarm_control_node = hermes_control.swarm_control_node:main",
+            "keyboard_teleop_node = hermes_control.keyboard_teleop_node:main",
             "decentralized_robot_agent_node = hermes_control.decentralized_robot_agent_node:main",
             "robot_state_beacon_node = hermes_control.robot_state_beacon_node:main",
         ],

@@ -62,6 +62,21 @@ class SwarmController:
             gesture_state.modifiers.pop("group_edit_name", None)
             return
 
+        if etype == "set_mode":
+            mode = str(effect.get("value", "")).strip().upper()
+            if mode in {"DRIVE", "SELECTION", "FORMATION", "BEHAVIOR", "PARAMS"}:
+                gesture_state.mode = mode
+            return
+
+        if etype == "set_selection":
+            value = effect.get("value")
+            if not isinstance(value, list):
+                return
+            self._set_selection(set(value))
+            if self.active_behavior:
+                self._refresh_behavior_params(gesture_state, target_centroid)
+            return
+
         if etype == "toggle":
             key = effect.get("key")
             if not key:
