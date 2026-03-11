@@ -52,6 +52,8 @@ class KeyboardTeleopNode(Node):
         self._aggression_level = 2
 
         self._stdin_fd: Optional[int] = None
+        self._stdin_stream = None
+        self._owns_stdin_stream = False
         self._stdin_old_settings: Optional[Any] = None
         self._terminal_ready = False
 
@@ -70,9 +72,18 @@ class KeyboardTeleopNode(Node):
         self._log_status()
 
     def _setup_terminal(self) -> None:
-        if not sys.stdin.isatty():
-            raise RuntimeError("Keyboard teleop requires an interactive TTY stdin.")
-        self._stdin_fd = sys.stdin.fileno()
+        # Prefer process stdin, but fallback to /dev/tty when launched through ros2 launch.
+        if sys.stdin.isatty():
+            self._stdin_stream = sys.stdin
+            self._owns_stdin_stream = False
+        else:
+            try:
+                self._stdin_stream = open("/dev/tty", "r", encoding="utf-8", buffering=1)
+                self._owns_stdin_stream = True
+            except OSError as exc:
+                raise RuntimeError("Keyboard teleop requires an interactive TTY stdin.") from exc
+
+        self._stdin_fd = self._stdin_stream.fileno()
         self._stdin_old_settings = termios.tcgetattr(self._stdin_fd)
         tty.setcbreak(self._stdin_fd)
         self._terminal_ready = True
@@ -80,6 +91,13 @@ class KeyboardTeleopNode(Node):
     def _restore_terminal(self) -> None:
         if self._terminal_ready and self._stdin_fd is not None and self._stdin_old_settings is not None:
             termios.tcsetattr(self._stdin_fd, termios.TCSADRAIN, self._stdin_old_settings)
+        if self._owns_stdin_stream and self._stdin_stream is not None:
+            try:
+                self._stdin_stream.close()
+            except OSError:
+                pass
+        self._stdin_stream = None
+        self._owns_stdin_stream = False
         self._terminal_ready = False
 
     def destroy_node(self) -> bool:
@@ -89,10 +107,12 @@ class KeyboardTeleopNode(Node):
     def _read_key(self) -> Optional[str]:
         if self._stdin_fd is None:
             return None
-        ready, _, _ = select.select([sys.stdin], [], [], 0.0)
+        ready, _, _ = select.select([self._stdin_fd], [], [], 0.0)
         if not ready:
             return None
-        return sys.stdin.read(1)
+        if self._stdin_stream is None:
+            return None
+        return self._stdin_stream.read(1)
 
     def _publish_packet(
         self,
