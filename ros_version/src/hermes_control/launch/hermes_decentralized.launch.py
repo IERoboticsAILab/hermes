@@ -20,6 +20,16 @@ def generate_launch_description() -> LaunchDescription:
         default_value="/cmd_vel",
         description="Command velocity topic for this robot.",
     )
+    cmd_vel_stamped_arg = DeclareLaunchArgument(
+        "cmd_vel_stamped",
+        default_value="false",
+        description="Publish geometry_msgs/TwistStamped instead of geometry_msgs/Twist on cmd_vel_topic.",
+    )
+    cmd_vel_frame_id_arg = DeclareLaunchArgument(
+        "cmd_vel_frame_id",
+        default_value="",
+        description="Optional frame_id for TwistStamped cmd_vel output.",
+    )
     global_frame_arg = DeclareLaunchArgument(
         "global_frame",
         default_value="map",
@@ -46,6 +56,8 @@ def generate_launch_description() -> LaunchDescription:
             robot_id_arg,
             odom_topic_arg,
             cmd_vel_topic_arg,
+            cmd_vel_stamped_arg,
+            cmd_vel_frame_id_arg,
             global_frame_arg,
             base_frame_arg,
             use_tf_pose_arg,
@@ -72,6 +84,8 @@ def generate_launch_description() -> LaunchDescription:
                         "robot_id": LaunchConfiguration("robot_id"),
                         "odom_topic": LaunchConfiguration("odom_topic"),
                         "cmd_vel_topic": LaunchConfiguration("cmd_vel_topic"),
+                        "cmd_vel_stamped": LaunchConfiguration("cmd_vel_stamped"),
+                        "cmd_vel_frame_id": LaunchConfiguration("cmd_vel_frame_id"),
                         "expected_state_frame": LaunchConfiguration("global_frame"),
                     }
                 ],

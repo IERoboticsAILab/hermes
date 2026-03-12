@@ -129,6 +129,21 @@ ros2 launch hermes_control robot_agent.launch.py \
   fallback_to_odom:=false
 ```
 
+If your robot controller expects `geometry_msgs/TwistStamped` on `/cmd_vel` (common on some ROSbot setups), enable stamped output:
+
+```bash
+ros2 launch hermes_control robot_agent.launch.py \
+  robot_id:=r3 \
+  odom_topic:=/r3/odom \
+  cmd_vel_topic:=/cmd_vel \
+  cmd_vel_stamped:=true \
+  cmd_vel_frame_id:=base_link \
+  global_frame:=odom \
+  base_frame:=base_link \
+  use_tf_pose:=false \
+  fallback_to_odom:=true
+```
+
 4. Repeat step 3 with per-robot IDs/topics for every robot in the swarm.
 
 5. Verify command delivery:

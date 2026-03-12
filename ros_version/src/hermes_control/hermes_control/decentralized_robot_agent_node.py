@@ -3,7 +3,7 @@ import math
 from typing import Any, Dict, List, Optional, Tuple
 
 import rclpy
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, TwistStamped
 from nav_msgs.msg import Odometry
 from rclpy.node import Node
 from std_msgs.msg import String
@@ -44,6 +44,8 @@ class DecentralizedRobotAgentNode(Node):
         self.declare_parameter("bid_topic", "/hermes/slot_bids")
         self.declare_parameter("odom_topic", "/odom")
         self.declare_parameter("cmd_vel_topic", "/cmd_vel")
+        self.declare_parameter("cmd_vel_stamped", False)
+        self.declare_parameter("cmd_vel_frame_id", "")
         self.declare_parameter("control_hz", 20.0)
         self.declare_parameter("expected_state_frame", "map")
         self.declare_parameter("stop_on_missing_intent_ms", 600)
@@ -78,6 +80,8 @@ class DecentralizedRobotAgentNode(Node):
         bid_topic = str(self.get_parameter("bid_topic").value)
         odom_topic = str(self.get_parameter("odom_topic").value)
         cmd_vel_topic = str(self.get_parameter("cmd_vel_topic").value)
+        self._cmd_vel_stamped = bool(self.get_parameter("cmd_vel_stamped").value)
+        self._cmd_vel_frame_id = str(self.get_parameter("cmd_vel_frame_id").value).strip()
 
         self._control_hz = _as_float(self.get_parameter("control_hz").value, 20.0)
         self._expected_state_frame = str(self.get_parameter("expected_state_frame").value).strip()
@@ -125,7 +129,10 @@ class DecentralizedRobotAgentNode(Node):
         self._stuck_since_ns: int = 0
         self._recovery_until_ns: int = 0
 
-        self._cmd_pub = self.create_publisher(Twist, cmd_vel_topic, 20)
+        if self._cmd_vel_stamped:
+            self._cmd_pub = self.create_publisher(TwistStamped, cmd_vel_topic, 20)
+        else:
+            self._cmd_pub = self.create_publisher(Twist, cmd_vel_topic, 20)
         self._bid_pub = self.create_publisher(String, bid_topic, 50)
         self._intent_sub = self.create_subscription(String, intent_topic, self._on_intent, 50)
         self._states_sub = self.create_subscription(String, robot_states_topic, self._on_robot_states, 50)
@@ -136,7 +143,8 @@ class DecentralizedRobotAgentNode(Node):
         self.get_logger().info(
             f"Robot agent ready. robot_id={self._robot_id}, intent_topic={intent_topic}, "
             f"robot_states_topic={robot_states_topic}, bid_topic={bid_topic}, odom_topic={odom_topic}, "
-            f"cmd_vel_topic={cmd_vel_topic}, expected_state_frame={self._expected_state_frame}"
+            f"cmd_vel_topic={cmd_vel_topic}, cmd_vel_stamped={self._cmd_vel_stamped}, "
+            f"expected_state_frame={self._expected_state_frame}"
         )
 
     def _now_ns(self) -> int:
@@ -485,18 +493,17 @@ class DecentralizedRobotAgentNode(Node):
         return self._assigned_slot
 
     def _publish_stop(self) -> None:
-        msg = Twist()
-        self._cmd_pub.publish(msg)
+        self._publish_cmd(0.0, 0.0, 0.0)
 
     def _publish_drive_stream(self, drive_cmd: Dict[str, Any]) -> None:
         vx = _as_float(drive_cmd.get("vx"), 0.0)
         vy = _as_float(drive_cmd.get("vy"), 0.0)
         omega = _as_float(drive_cmd.get("omega"), _as_float(drive_cmd.get("steer"), 0.0))
-        msg = Twist()
-        msg.linear.x = _clamp(vx, -self._max_linear, self._max_linear)
-        msg.linear.y = _clamp(vy, -self._max_linear, self._max_linear)
-        msg.angular.z = _clamp(omega, -self._max_angular, self._max_angular)
-        self._cmd_pub.publish(msg)
+        self._publish_cmd(
+            _clamp(vx, -self._max_linear, self._max_linear),
+            _clamp(vy, -self._max_linear, self._max_linear),
+            _clamp(omega, -self._max_angular, self._max_angular),
+        )
 
     def _current_pose(self) -> Optional[Tuple[float, float, float]]:
         if self._self_pose is not None:
@@ -593,9 +600,7 @@ class DecentralizedRobotAgentNode(Node):
         now_ns = self._now_ns()
         if now_ns < self._recovery_until_ns:
             sign = -1.0 if (sum(ord(c) for c in self._robot_id) % 2 == 0) else 1.0
-            msg = Twist()
-            msg.angular.z = _clamp(sign * self._deadlock_turn_rate, -self._max_angular, self._max_angular)
-            self._cmd_pub.publish(msg)
+            self._publish_cmd(0.0, 0.0, _clamp(sign * self._deadlock_turn_rate, -self._max_angular, self._max_angular))
             return True
 
         if self._last_goal_dist is None or dist_to_goal < (self._last_goal_dist - self._deadlock_eps):
@@ -626,13 +631,12 @@ class DecentralizedRobotAgentNode(Node):
 
         if dist <= self._pos_tol:
             yaw_err = _wrap_to_pi(tyaw - yaw)
-            msg = Twist()
-            msg.linear.x = 0.0
+            omega = 0.0
             if abs(yaw_err) <= self._yaw_tol:
-                msg.angular.z = 0.0
+                omega = 0.0
             else:
-                msg.angular.z = _clamp(self._kp_angular * yaw_err, -self._max_angular, self._max_angular)
-            self._cmd_pub.publish(msg)
+                omega = _clamp(self._kp_angular * yaw_err, -self._max_angular, self._max_angular)
+            self._publish_cmd(0.0, 0.0, omega)
             self._last_goal_dist = dist
             self._stuck_since_ns = self._now_ns()
             return
@@ -663,10 +667,11 @@ class DecentralizedRobotAgentNode(Node):
             desired_heading = math.atan2(safe_world_v[1], safe_world_v[0])
         heading_err = _wrap_to_pi(desired_heading - yaw)
 
-        msg = Twist()
-        msg.linear.x = _clamp(safe_speed * max(0.0, math.cos(heading_err)), -self._max_linear, self._max_linear)
-        msg.angular.z = _clamp(self._kp_angular * heading_err, -self._max_angular, self._max_angular)
-        self._cmd_pub.publish(msg)
+        self._publish_cmd(
+            _clamp(safe_speed * max(0.0, math.cos(heading_err)), -self._max_linear, self._max_linear),
+            0.0,
+            _clamp(self._kp_angular * heading_err, -self._max_angular, self._max_angular),
+        )
 
     def _tick(self) -> None:
         if self._intent is None or self._is_stale(self._intent_rx_ns, self._missing_intent_ms):
@@ -746,3 +751,19 @@ def main(args: Optional[list[str]] = None) -> None:
 
 if __name__ == "__main__":
     main()
+    def _new_cmd_msg(self) -> Tuple[Any, Twist]:
+        if self._cmd_vel_stamped:
+            msg = TwistStamped()
+            msg.header.stamp = self.get_clock().now().to_msg()
+            if self._cmd_vel_frame_id:
+                msg.header.frame_id = self._cmd_vel_frame_id
+            return msg, msg.twist
+        msg = Twist()
+        return msg, msg
+
+    def _publish_cmd(self, vx: float, vy: float, omega: float) -> None:
+        msg, twist = self._new_cmd_msg()
+        twist.linear.x = float(vx)
+        twist.linear.y = float(vy)
+        twist.angular.z = float(omega)
+        self._cmd_pub.publish(msg)
