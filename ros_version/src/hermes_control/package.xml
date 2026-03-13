@@ -3,7 +3,7 @@
   <name>hermes_control</name>
   <version>0.1.0</version>
   <description>ROS2 packaging of the H.E.R.M.E.S gesture and swarm control software.</description>
-  <maintainer email="saleh@example.com">salehabdelrahman</maintainer>
+  <maintainer email="salehabdelrahman14@outlook.com">salehabdelrahman</maintainer>
   <license>MIT</license>
 
   <buildtool_depend>ament_python</buildtool_depend>

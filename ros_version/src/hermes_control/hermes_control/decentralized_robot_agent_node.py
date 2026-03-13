@@ -34,6 +34,20 @@ def _yaw_from_quaternion(x: float, y: float, z: float, w: float) -> float:
     return math.atan2(siny_cosp, cosy_cosp)
 
 
+def _as_bool(value: Any, default: bool = False) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value != 0
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "t", "yes", "y", "on"}:
+            return True
+        if normalized in {"0", "false", "f", "no", "n", "off", ""}:
+            return False
+    return default
+
+
 class DecentralizedRobotAgentNode(Node):
     def __init__(self) -> None:
         super().__init__("decentralized_robot_agent_node")
@@ -80,7 +94,7 @@ class DecentralizedRobotAgentNode(Node):
         bid_topic = str(self.get_parameter("bid_topic").value)
         odom_topic = str(self.get_parameter("odom_topic").value)
         cmd_vel_topic = str(self.get_parameter("cmd_vel_topic").value)
-        self._cmd_vel_stamped = bool(self.get_parameter("cmd_vel_stamped").value)
+        self._cmd_vel_stamped = _as_bool(self.get_parameter("cmd_vel_stamped").value, False)
         self._cmd_vel_frame_id = str(self.get_parameter("cmd_vel_frame_id").value).strip()
 
         self._control_hz = _as_float(self.get_parameter("control_hz").value, 20.0)
@@ -99,14 +113,14 @@ class DecentralizedRobotAgentNode(Node):
         self._yaw_tol = max(0.0, _as_float(self.get_parameter("heading_tolerance_rad").value, 0.12))
         self._heading_slowdown = max(0.1, _as_float(self.get_parameter("heading_slowdown_rad").value, 0.8))
 
-        self._enable_ca = bool(self.get_parameter("enable_collision_avoidance").value)
+        self._enable_ca = _as_bool(self.get_parameter("enable_collision_avoidance").value, True)
         self._neighbor_radius = max(0.5, _as_float(self.get_parameter("neighbor_influence_radius_m").value, 3.0))
         self._time_horizon = max(0.2, _as_float(self.get_parameter("collision_time_horizon_s").value, 2.0))
         self._robot_radius = max(0.05, _as_float(self.get_parameter("robot_radius_m").value, 0.22))
         self._safety_margin = max(0.01, _as_float(self.get_parameter("safety_margin_m").value, 0.10))
         self._velocity_samples = max(8, int(self.get_parameter("velocity_samples").value))
 
-        self._enable_deadlock_recovery = bool(self.get_parameter("enable_deadlock_recovery").value)
+        self._enable_deadlock_recovery = _as_bool(self.get_parameter("enable_deadlock_recovery").value, True)
         self._deadlock_window_ms = int(self.get_parameter("deadlock_window_ms").value)
         self._deadlock_eps = max(0.001, _as_float(self.get_parameter("deadlock_progress_epsilon_m").value, 0.03))
         self._deadlock_recovery_ms = int(self.get_parameter("deadlock_recovery_ms").value)
@@ -492,6 +506,23 @@ class DecentralizedRobotAgentNode(Node):
                 self._slot_lock_until_ns = now_ns + int(self._assignment_lock_ms * 1_000_000)
         return self._assigned_slot
 
+    def _new_cmd_msg(self) -> Tuple[Any, Twist]:
+        if self._cmd_vel_stamped:
+            msg = TwistStamped()
+            msg.header.stamp = self.get_clock().now().to_msg()
+            if self._cmd_vel_frame_id:
+                msg.header.frame_id = self._cmd_vel_frame_id
+            return msg, msg.twist
+        msg = Twist()
+        return msg, msg
+
+    def _publish_cmd(self, vx: float, vy: float, omega: float) -> None:
+        msg, twist = self._new_cmd_msg()
+        twist.linear.x = float(vx)
+        twist.linear.y = float(vy)
+        twist.angular.z = float(omega)
+        self._cmd_pub.publish(msg)
+
     def _publish_stop(self) -> None:
         self._publish_cmd(0.0, 0.0, 0.0)
 
@@ -751,19 +782,3 @@ def main(args: Optional[list[str]] = None) -> None:
 
 if __name__ == "__main__":
     main()
-    def _new_cmd_msg(self) -> Tuple[Any, Twist]:
-        if self._cmd_vel_stamped:
-            msg = TwistStamped()
-            msg.header.stamp = self.get_clock().now().to_msg()
-            if self._cmd_vel_frame_id:
-                msg.header.frame_id = self._cmd_vel_frame_id
-            return msg, msg.twist
-        msg = Twist()
-        return msg, msg
-
-    def _publish_cmd(self, vx: float, vy: float, omega: float) -> None:
-        msg, twist = self._new_cmd_msg()
-        twist.linear.x = float(vx)
-        twist.linear.y = float(vy)
-        twist.angular.z = float(omega)
-        self._cmd_pub.publish(msg)
