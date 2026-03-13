@@ -17,6 +17,20 @@ def _yaw_from_quaternion(x: float, y: float, z: float, w: float) -> float:
     return math.atan2(siny_cosp, cosy_cosp)
 
 
+def _as_bool(value, default: bool = False) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value != 0
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "t", "yes", "y", "on"}:
+            return True
+        if normalized in {"0", "false", "f", "no", "n", "off", ""}:
+            return False
+    return default
+
+
 class RobotStateBeaconNode(Node):
     def __init__(self) -> None:
         super().__init__("robot_state_beacon_node")
@@ -36,8 +50,8 @@ class RobotStateBeaconNode(Node):
         self._publish_hz = float(self.get_parameter("publish_hz").value)
         self._global_frame = str(self.get_parameter("global_frame").value).strip()
         self._base_frame = str(self.get_parameter("base_frame").value).strip()
-        self._use_tf_pose = bool(self.get_parameter("use_tf_pose").value)
-        self._fallback_to_odom = bool(self.get_parameter("fallback_to_odom").value)
+        self._use_tf_pose = _as_bool(self.get_parameter("use_tf_pose").value, True)
+        self._fallback_to_odom = _as_bool(self.get_parameter("fallback_to_odom").value, True)
 
         self._latest_odom: Optional[Odometry] = None
         self._last_tf_warn_ns = 0

@@ -2,6 +2,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 
 
 def generate_launch_description() -> LaunchDescription:
@@ -50,8 +51,8 @@ def generate_launch_description() -> LaunchDescription:
                         "state_topic": LaunchConfiguration("robot_state_topic"),
                         "global_frame": LaunchConfiguration("global_frame"),
                         "base_frame": LaunchConfiguration("base_frame"),
-                        "use_tf_pose": LaunchConfiguration("use_tf_pose"),
-                        "fallback_to_odom": LaunchConfiguration("fallback_to_odom"),
+                        "use_tf_pose": ParameterValue(LaunchConfiguration("use_tf_pose"), value_type=bool),
+                        "fallback_to_odom": ParameterValue(LaunchConfiguration("fallback_to_odom"), value_type=bool),
                     }
                 ],
             ),
@@ -65,7 +66,7 @@ def generate_launch_description() -> LaunchDescription:
                         "robot_id": LaunchConfiguration("robot_id"),
                         "odom_topic": LaunchConfiguration("odom_topic"),
                         "cmd_vel_topic": LaunchConfiguration("cmd_vel_topic"),
-                        "cmd_vel_stamped": LaunchConfiguration("cmd_vel_stamped"),
+                        "cmd_vel_stamped": ParameterValue(LaunchConfiguration("cmd_vel_stamped"), value_type=bool),
                         "cmd_vel_frame_id": LaunchConfiguration("cmd_vel_frame_id"),
                         "intent_topic": LaunchConfiguration("intent_topic"),
                         "robot_states_topic": LaunchConfiguration("robot_state_topic"),
