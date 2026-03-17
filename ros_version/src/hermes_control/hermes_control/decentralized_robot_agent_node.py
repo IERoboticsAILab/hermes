@@ -1,5 +1,6 @@
 import json
 import math
+import socket
 from typing import Any, Dict, List, Optional, Tuple
 
 import rclpy
@@ -60,8 +61,12 @@ class DecentralizedRobotAgentNode(Node):
         self.declare_parameter("cmd_vel_topic", "/cmd_vel")
         self.declare_parameter("cmd_vel_stamped", False)
         self.declare_parameter("cmd_vel_frame_id", "")
+        self.declare_parameter("enable_ros_local_io", True)
+        self.declare_parameter("cmd_udp_host", "")
+        self.declare_parameter("cmd_udp_port", 0)
         self.declare_parameter("control_hz", 20.0)
         self.declare_parameter("expected_state_frame", "map")
+        self.declare_parameter("require_global_state_frame_for_multi_robot", True)
         self.declare_parameter("stop_on_missing_intent_ms", 600)
         self.declare_parameter("stop_on_missing_states_ms", 600)
         self.declare_parameter("bid_timeout_ms", 400)
@@ -96,9 +101,16 @@ class DecentralizedRobotAgentNode(Node):
         cmd_vel_topic = str(self.get_parameter("cmd_vel_topic").value)
         self._cmd_vel_stamped = _as_bool(self.get_parameter("cmd_vel_stamped").value, False)
         self._cmd_vel_frame_id = str(self.get_parameter("cmd_vel_frame_id").value).strip()
+        self._enable_ros_local_io = _as_bool(self.get_parameter("enable_ros_local_io").value, True)
+        self._cmd_udp_host = str(self.get_parameter("cmd_udp_host").value).strip()
+        self._cmd_udp_port = int(self.get_parameter("cmd_udp_port").value)
 
         self._control_hz = _as_float(self.get_parameter("control_hz").value, 20.0)
         self._expected_state_frame = str(self.get_parameter("expected_state_frame").value).strip()
+        self._require_global_state_frame_for_multi_robot = _as_bool(
+            self.get_parameter("require_global_state_frame_for_multi_robot").value,
+            True,
+        )
         self._missing_intent_ms = int(self.get_parameter("stop_on_missing_intent_ms").value)
         self._missing_states_ms = int(self.get_parameter("stop_on_missing_states_ms").value)
         self._bid_timeout_ms = int(self.get_parameter("bid_timeout_ms").value)
@@ -142,24 +154,42 @@ class DecentralizedRobotAgentNode(Node):
         self._last_goal_dist: Optional[float] = None
         self._stuck_since_ns: int = 0
         self._recovery_until_ns: int = 0
+        self._last_geometry_warn_ns: int = 0
+        self._use_udp_cmd = self._cmd_udp_port > 0 and bool(self._cmd_udp_host)
 
-        if self._cmd_vel_stamped:
-            self._cmd_pub = self.create_publisher(TwistStamped, cmd_vel_topic, 20)
-        else:
-            self._cmd_pub = self.create_publisher(Twist, cmd_vel_topic, 20)
+        self._cmd_pub = None
+        if cmd_vel_topic and (self._enable_ros_local_io or not self._use_udp_cmd):
+            if self._cmd_vel_stamped:
+                self._cmd_pub = self.create_publisher(TwistStamped, cmd_vel_topic, 20)
+            else:
+                self._cmd_pub = self.create_publisher(Twist, cmd_vel_topic, 20)
+        self._cmd_udp_sock = None
+        if self._use_udp_cmd:
+            self._cmd_udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self._bid_pub = self.create_publisher(String, bid_topic, 50)
         self._intent_sub = self.create_subscription(String, intent_topic, self._on_intent, 50)
         self._states_sub = self.create_subscription(String, robot_states_topic, self._on_robot_states, 50)
         self._bid_sub = self.create_subscription(String, bid_topic, self._on_slot_bid, 50)
-        self._odom_sub = self.create_subscription(Odometry, odom_topic, self._on_odom, 50)
+        self._odom_sub = None
+        if self._enable_ros_local_io and odom_topic:
+            self._odom_sub = self.create_subscription(Odometry, odom_topic, self._on_odom, 50)
         self._timer = self.create_timer(max(0.01, 1.0 / max(1e-6, self._control_hz)), self._tick)
 
         self.get_logger().info(
             f"Robot agent ready. robot_id={self._robot_id}, intent_topic={intent_topic}, "
             f"robot_states_topic={robot_states_topic}, bid_topic={bid_topic}, odom_topic={odom_topic}, "
             f"cmd_vel_topic={cmd_vel_topic}, cmd_vel_stamped={self._cmd_vel_stamped}, "
-            f"expected_state_frame={self._expected_state_frame}"
+            f"expected_state_frame={self._expected_state_frame}, enable_ros_local_io={self._enable_ros_local_io}, "
+            f"cmd_udp_port={self._cmd_udp_port}"
         )
+
+    def destroy_node(self) -> bool:
+        if self._cmd_udp_sock is not None:
+            try:
+                self._cmd_udp_sock.close()
+            except OSError:
+                pass
+        return super().destroy_node()
 
     def _now_ns(self) -> int:
         return int(self.get_clock().now().nanoseconds)
@@ -227,11 +257,25 @@ class DecentralizedRobotAgentNode(Node):
                 "vx": _as_float(payload.get("vx"), 0.0),
                 "vy": _as_float(payload.get("vy"), 0.0),
             }
+            if rid == self._robot_id and not self._enable_ros_local_io:
+                self._self_pose = (
+                    self._robot_states[rid]["x"],
+                    self._robot_states[rid]["y"],
+                    self._robot_states[rid]["yaw"],
+                )
+                self._self_vel_world = (
+                    self._robot_states[rid]["vx"],
+                    self._robot_states[rid]["vy"],
+                )
             self._robot_state_rx_ns[rid] = now_ns
         else:
             normalized = self._normalize_state_map(payload)
             self._robot_states = normalized
             self._robot_state_rx_ns = {rid: now_ns for rid in normalized.keys()}
+            if self._robot_id in normalized and not self._enable_ros_local_io:
+                own = normalized[self._robot_id]
+                self._self_pose = (own["x"], own["y"], own["yaw"])
+                self._self_vel_world = (own["vx"], own["vy"])
         self._states_rx_ns = now_ns
 
     def _on_slot_bid(self, msg: String) -> None:
@@ -517,6 +561,26 @@ class DecentralizedRobotAgentNode(Node):
         return msg, msg
 
     def _publish_cmd(self, vx: float, vy: float, omega: float) -> None:
+        if self._cmd_udp_sock is not None and self._use_udp_cmd:
+            payload = {
+                "schema": "hermes.local_cmd.v1",
+                "stamp_ms": int(self.get_clock().now().nanoseconds / 1_000_000),
+                "robot_id": self._robot_id,
+                "vx": float(vx),
+                "vy": float(vy),
+                "omega": float(omega),
+                "frame_id": self._cmd_vel_frame_id,
+            }
+            try:
+                self._cmd_udp_sock.sendto(
+                    json.dumps(payload, separators=(",", ":")).encode("utf-8"),
+                    (self._cmd_udp_host, self._cmd_udp_port),
+                )
+            except OSError:
+                pass
+            return
+        if self._cmd_pub is None:
+            return
         msg, twist = self._new_cmd_msg()
         twist.linear.x = float(vx)
         twist.linear.y = float(vy)
@@ -704,6 +768,21 @@ class DecentralizedRobotAgentNode(Node):
             _clamp(self._kp_angular * heading_err, -self._max_angular, self._max_angular),
         )
 
+    def _geometry_ready(self, selection: List[str]) -> bool:
+        if len(selection) <= 1 or not self._require_global_state_frame_for_multi_robot:
+            return True
+        frame = self._expected_state_frame.strip().lower()
+        if frame not in {"", "odom", "base_link", "base_footprint"}:
+            return True
+        now_ns = self._now_ns()
+        if (now_ns - self._last_geometry_warn_ns) > 2_000_000_000:
+            self._last_geometry_warn_ns = now_ns
+            self.get_logger().warning(
+                "Multi-robot formation/behavior disabled because expected_state_frame is a local frame "
+                f"('{self._expected_state_frame}'). Use a shared global frame such as 'map' with TF-based beacons."
+            )
+        return False
+
     def _tick(self) -> None:
         if self._intent is None or self._is_stale(self._intent_rx_ns, self._missing_intent_ms):
             self._publish_stop()
@@ -733,6 +812,11 @@ class DecentralizedRobotAgentNode(Node):
         now_ns = self._now_ns()
         active_selection = self._fresh_selection(selection, now_ns)
         if self._robot_id not in active_selection:
+            self._publish_stop()
+            self._assigned_slot = None
+            return
+
+        if not self._geometry_ready(active_selection):
             self._publish_stop()
             self._assigned_slot = None
             return

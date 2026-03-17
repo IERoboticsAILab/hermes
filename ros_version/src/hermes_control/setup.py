@@ -33,6 +33,7 @@ setup(
             "keyboard_teleop_node = hermes_control.keyboard_teleop_node:main",
             "decentralized_robot_agent_node = hermes_control.decentralized_robot_agent_node:main",
             "robot_state_beacon_node = hermes_control.robot_state_beacon_node:main",
+            "local_robot_io_node = hermes_control.local_robot_io_node:main",
         ],
     },
 )
