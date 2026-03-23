@@ -16,6 +16,16 @@ setup(
                 "launch/hermes_decentralized.launch.py",
                 "launch/hermes_keyboard_teleop.launch.py",
                 "launch/robot_agent.launch.py",
+                "launch/optitrack_version1_pi.launch.py",
+                "launch/robot_agent_optitrack_version1.launch.py",
+                "launch/robot_agent_optitrack_version2.launch.py",
+            ],
+        ),
+        (
+            f"share/{package_name}/config",
+            [
+                "config/optitrack_version1_placeholders.yaml",
+                "config/optitrack_version2_single_robot_placeholder.yaml",
             ],
         ),
     ],
@@ -33,6 +43,7 @@ setup(
             "keyboard_teleop_node = hermes_control.keyboard_teleop_node:main",
             "decentralized_robot_agent_node = hermes_control.decentralized_robot_agent_node:main",
             "robot_state_beacon_node = hermes_control.robot_state_beacon_node:main",
+            "optitrack_pose_beacon_node = hermes_control.optitrack_pose_beacon_node:main",
         ],
     },
 )

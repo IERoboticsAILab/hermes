@@ -60,6 +60,7 @@ class DecentralizedRobotAgentNode(Node):
         self.declare_parameter("cmd_vel_topic", "/cmd_vel")
         self.declare_parameter("cmd_vel_stamped", False)
         self.declare_parameter("cmd_vel_frame_id", "")
+        self.declare_parameter("use_beacon_pose_for_self", False)
         self.declare_parameter("control_hz", 20.0)
         self.declare_parameter("expected_state_frame", "map")
         self.declare_parameter("stop_on_missing_intent_ms", 600)
@@ -96,6 +97,7 @@ class DecentralizedRobotAgentNode(Node):
         cmd_vel_topic = str(self.get_parameter("cmd_vel_topic").value)
         self._cmd_vel_stamped = _as_bool(self.get_parameter("cmd_vel_stamped").value, False)
         self._cmd_vel_frame_id = str(self.get_parameter("cmd_vel_frame_id").value).strip()
+        self._use_beacon_pose_for_self = _as_bool(self.get_parameter("use_beacon_pose_for_self").value, False)
 
         self._control_hz = _as_float(self.get_parameter("control_hz").value, 20.0)
         self._expected_state_frame = str(self.get_parameter("expected_state_frame").value).strip()
@@ -227,11 +229,25 @@ class DecentralizedRobotAgentNode(Node):
                 "vx": _as_float(payload.get("vx"), 0.0),
                 "vy": _as_float(payload.get("vy"), 0.0),
             }
+            if rid == self._robot_id and self._use_beacon_pose_for_self:
+                self._self_pose = (
+                    self._robot_states[rid]["x"],
+                    self._robot_states[rid]["y"],
+                    self._robot_states[rid]["yaw"],
+                )
+                self._self_vel_world = (
+                    self._robot_states[rid]["vx"],
+                    self._robot_states[rid]["vy"],
+                )
             self._robot_state_rx_ns[rid] = now_ns
         else:
             normalized = self._normalize_state_map(payload)
             self._robot_states = normalized
             self._robot_state_rx_ns = {rid: now_ns for rid in normalized.keys()}
+            if self._robot_id in normalized and self._use_beacon_pose_for_self:
+                own = normalized[self._robot_id]
+                self._self_pose = (own["x"], own["y"], own["yaw"])
+                self._self_vel_world = (own["vx"], own["vy"])
         self._states_rx_ns = now_ns
 
     def _on_slot_bid(self, msg: String) -> None:
@@ -537,6 +553,11 @@ class DecentralizedRobotAgentNode(Node):
         )
 
     def _current_pose(self) -> Optional[Tuple[float, float, float]]:
+        if self._use_beacon_pose_for_self:
+            own = self._fresh_state_for(self._robot_id)
+            if own is not None:
+                return (own["x"], own["y"], own["yaw"])
+            return None
         if self._self_pose is not None:
             return self._self_pose
         own = self._fresh_state_for(self._robot_id)

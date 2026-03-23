@@ -1,0 +1,5 @@
+optitrack_pose_beacon_node:
+  ros__parameters:
+    frame_id: optitrack
+    robot_ids: [r1, r2, r3]
+    rigid_body_names: [rosbot_1, rosbot_2, rosbot_3]
