@@ -1,0 +1,22 @@
+robot_haptic_status_node:
+  ros__parameters:
+    robot_id: r1
+    status_topic: /hermes/robot_haptic_status
+    publish_hz: 10.0
+    enable_scan: true
+    scan_topic: /scan
+    front_arc_deg: 35.0
+    scan_stale_ms: 600
+    front_scan_hit_distance_m: 0.55
+    front_scan_clear_distance_m: 1.20
+    front_range_topics: []
+    rear_range_topics: []
+    range_stale_ms: 600
+    front_range_hit_distance_m: 0.20
+    front_range_clear_distance_m: 0.50
+    rear_range_hit_distance_m: 0.15
+    rear_range_clear_distance_m: 0.40
+    enable_diagnostics: true
+    diagnostics_topic: /diagnostics
+    diagnostic_name_filters: [rosbot, base, controller, motor]
+    treat_warn_as_error: false
