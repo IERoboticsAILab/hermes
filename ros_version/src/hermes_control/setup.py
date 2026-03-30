@@ -26,6 +26,12 @@ setup(
             [
                 "config/optitrack_version1_placeholders.yaml",
                 "config/optitrack_version2_single_robot_placeholder.yaml",
+                "config/optitrack_r1.yaml",
+                "config/optitrack_r2.yaml",
+                "config/optitrack_r3.yaml",
+                "config/optitrack_r4.yaml",
+                "config/optitrack_r5.yaml",
+                "config/optitrack_r6.yaml",
             ],
         ),
     ],
