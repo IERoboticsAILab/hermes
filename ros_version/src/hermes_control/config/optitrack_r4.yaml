@@ -1,5 +1,8 @@
 optitrack_pose_beacon_node:
   ros__parameters:
+    server_ip: 10.205.3.3
+    client_ip: 10.205.3.43
+    server_type: unicast
     frame_id: optitrack
     robot_id: r4
-    rigid_body_name: rosbot_4
+    rigid_body_name: umh_5
