@@ -1,0 +1,11 @@
+vest_serial_bridge_node:
+  ros__parameters:
+    serial_port: /dev/ttyUSB0
+    baud_rate: 921600
+    serial_retry_s: 2.0
+    poll_hz: 60.0
+    glove_timeout_ms: 200
+    raw_topic: /hermes/raw_input
+    serial_frame_topic: /hermes/vest_serial_tx
+    hub_topic: /hermes/vest_hub_rx
+    debug_topic: /hermes/vest_serial_state

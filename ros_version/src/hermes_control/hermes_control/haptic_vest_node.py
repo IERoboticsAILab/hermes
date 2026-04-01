@@ -67,6 +67,11 @@ class _SerialWriter:
         115200: termios.B115200,
         230400: termios.B230400,
     }
+    _OPTIONAL_BAUDS = {
+        460800: getattr(termios, "B460800", None),
+        921600: getattr(termios, "B921600", None),
+    }
+    _BAUD_MAP.update({rate: code for rate, code in _OPTIONAL_BAUDS.items() if code is not None})
 
     def __init__(self, logger, port: str, baud_rate: int, retry_s: float) -> None:
         self._logger = logger
@@ -143,6 +148,8 @@ class HapticVestNode(Node):
         self.declare_parameter("baud_rate", 115200)
         self.declare_parameter("serial_hz", 20.0)
         self.declare_parameter("serial_retry_s", 2.0)
+        self.declare_parameter("use_serial_output", True)
+        self.declare_parameter("serial_frame_topic", "/hermes/vest_serial_tx")
 
         self.declare_parameter("robot_ids", ["r1", "r2", "r3", "r4", "r5", "r6"])
         self.declare_parameter("motor_robot_ids", ["r1", "r2", "r3", "r4", "r5", "r6"])
@@ -175,6 +182,8 @@ class HapticVestNode(Node):
         baud_rate = int(self.get_parameter("baud_rate").value)
         serial_hz = max(5.0, _as_float(self.get_parameter("serial_hz").value, 20.0))
         serial_retry_s = max(0.2, _as_float(self.get_parameter("serial_retry_s").value, 2.0))
+        use_serial_output = _as_bool(self.get_parameter("use_serial_output").value, True)
+        serial_frame_topic = str(self.get_parameter("serial_frame_topic").value)
 
         self._robot_ids = sorted(str(v).strip().lower() for v in self.get_parameter("robot_ids").value if str(v).strip())
         self._motor_robot_ids = [
@@ -214,7 +223,14 @@ class HapticVestNode(Node):
             0.1, _as_float(self.get_parameter("default_target_spacing_m").value, 1.00)
         )
 
-        self._serial = _SerialWriter(self.get_logger(), serial_port, baud_rate, serial_retry_s)
+        self._use_serial_output = use_serial_output
+        self._serial_frame_topic = serial_frame_topic
+        self._serial: Optional[_SerialWriter] = None
+        self._frame_pub = None
+        if self._use_serial_output:
+            self._serial = _SerialWriter(self.get_logger(), serial_port, baud_rate, serial_retry_s)
+        else:
+            self._frame_pub = self.create_publisher(String, self._serial_frame_topic, 20)
         self._debug_pub = self.create_publisher(String, debug_topic, 20)
         self.create_subscription(String, robot_state_topic, self._on_robot_state, 50)
         self.create_subscription(String, robot_status_topic, self._on_robot_status, 50)
@@ -241,12 +257,14 @@ class HapticVestNode(Node):
         self._last_debug_ns = 0
 
         self.get_logger().info(
-            f"Haptic vest ready. serial_port={serial_port}, baud_rate={baud_rate}, "
+            f"Haptic vest ready. output_mode={'serial' if self._use_serial_output else 'topic'}, "
+            f"serial_port={serial_port}, baud_rate={baud_rate}, serial_frame_topic={self._serial_frame_topic}, "
             f"motor_robot_ids={self._motor_robot_ids}, motor_labels={self._motor_labels}"
         )
 
     def destroy_node(self) -> bool:
-        self._serial.close()
+        if self._serial is not None:
+            self._serial.close()
         return super().destroy_node()
 
     def _now_ns(self) -> int:
@@ -527,7 +545,12 @@ class HapticVestNode(Node):
 
         self._tx_seq += 1
         frame = "V1,{seq},{levels}\n".format(seq=self._tx_seq, levels=",".join(str(v) for v in levels))
-        self._serial.write_line(frame, now_ns)
+        if self._serial is not None:
+            self._serial.write_line(frame, now_ns)
+        elif self._frame_pub is not None:
+            out = String()
+            out.data = frame
+            self._frame_pub.publish(out)
 
         if (now_ns - self._last_debug_ns) >= 250_000_000:
             self._last_debug_ns = now_ns

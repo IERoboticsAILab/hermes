@@ -1,9 +1,11 @@
 haptic_vest_node:
   ros__parameters:
     serial_port: /dev/ttyUSB0
-    baud_rate: 115200
+    baud_rate: 921600
     serial_hz: 20.0
     serial_retry_s: 2.0
+    use_serial_output: true
+    serial_frame_topic: /hermes/vest_serial_tx
     robot_ids: [r1, r2, r3, r4, r5, r6]
     motor_robot_ids: [r1, r2, r3, r4, r5, r6]
     motor_labels: [left_sleeve, right_sleeve, left_shoulder, right_shoulder, left_torso, right_torso]

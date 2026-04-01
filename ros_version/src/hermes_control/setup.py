@@ -20,6 +20,7 @@ setup(
                 "launch/robot_agent_optitrack_version1.launch.py",
                 "launch/robot_agent_optitrack_version2.launch.py",
                 "launch/haptic_vest.launch.py",
+                "launch/wearables_pi.launch.py",
                 "launch/robot_haptic_status.launch.py",
             ],
         ),
@@ -35,6 +36,7 @@ setup(
                 "config/optitrack_r5.yaml",
                 "config/optitrack_r6.yaml",
                 "config/haptic_vest_pi.yaml",
+                "config/vest_serial_bridge_pi.yaml",
                 "config/robot_haptic_status_defaults.yaml",
                 "config/robot_haptic_status_r1.yaml",
                 "config/robot_haptic_status_r2.yaml",
@@ -62,6 +64,7 @@ setup(
             "optitrack_pose_beacon_node = hermes_control.optitrack_pose_beacon_node:main",
             "robot_haptic_status_node = hermes_control.robot_haptic_status_node:main",
             "haptic_vest_node = hermes_control.haptic_vest_node:main",
+            "vest_serial_bridge_node = hermes_control.vest_serial_bridge_node:main",
         ],
     },
 )
