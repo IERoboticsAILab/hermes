@@ -4,5 +4,8 @@ optitrack_pose_beacon_node:
     client_ip: 192.168.0.106
     server_type: unicast
     frame_id: optitrack
+    planar_x_axis: x
+    planar_y_axis: z
+    forward_axis: x
     robot_id: r6
     rigid_body_name: rosbot_6

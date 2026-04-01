@@ -4,5 +4,8 @@ optitrack_pose_beacon_node:
     client_ip: 10.205.3.43
     server_type: unicast
     frame_id: optitrack
+    planar_x_axis: x
+    planar_y_axis: z
+    forward_axis: x
     robot_id: r1
     rigid_body_name: umh_3
