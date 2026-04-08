@@ -17,7 +17,7 @@
 // --------------------------------------------
 // Fill in the vest/hub ESP32 MAC here.
 // This is the ESP32 on the vest, connected to the Raspberry Pi over USB serial.
-static uint8_t HUB_MAC[6] = {0xAA, 0xBB, 0xCC, 0x11, 0x22, 0x33};
+static uint8_t HUB_MAC[6] = {0x4c, 0xc3, 0x82, 0xcc, 0xd0, 0x04};
 
 static const char* GLOVE_ID = "R";
 static const uint8_t ESPNOW_CHANNEL = 1;
