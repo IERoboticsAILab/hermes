@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
+#include <esp_err.h>
 #include <esp_now.h>
 #include <esp_wifi.h>
 #include <ArduinoJson.h>
@@ -22,13 +23,17 @@ static uint8_t HUB_MAC[6] = {0x4c, 0xc3, 0x82, 0xcc, 0xd0, 0x04};
 static const char* GLOVE_ID = "R";
 static const uint8_t ESPNOW_CHANNEL = 1;
 static const uint32_t SEND_INTERVAL_MS = 20;  // 50 Hz
+static const bool SERIAL_DEBUG_TX = true;
+static const uint32_t SERIAL_DEBUG_INTERVAL_MS = 250;
 
-static const int FSR_INDEX_PIN = 25;
-static const int FSR_MIDDLE_PIN = 26;
-static const int FSR_RING_PIN = 27;
-static const int FSR_PINKY_PIN = 14;
+// Use ADC1 pins here. ADC2 pins such as GPIO25/GPIO26/GPIO27/GPIO14
+// conflict with Wi-Fi/ESP-NOW on classic ESP32 boards.
+static const int FSR_INDEX_PIN = 34;
+static const int FSR_MIDDLE_PIN = 35;
+static const int FSR_RING_PIN = 32;
+static const int FSR_PINKY_PIN = 33;
 
-static const int FSR_PRESS_THRESHOLD = 1600;  // ADC threshold, tune for your hardware
+static const int FSR_PRESS_THRESHOLD = 1200;  // ADC threshold, tune for your hardware
 
 // MPU6050 IMU (I2C). Adjust pins/address only if your wiring differs.
 static const int IMU_SDA_PIN = 21;
@@ -54,6 +59,9 @@ static uint32_t imu_last_us = 0;
 
 uint32_t seq_no = 0;
 uint32_t last_send_ms = 0;
+uint32_t last_debug_tx_ms = 0;
+volatile bool send_in_flight = false;
+uint32_t last_send_start_ms = 0;
 
 bool fsrPressed(int pin) {
   return analogRead(pin) > FSR_PRESS_THRESHOLD;
@@ -227,6 +235,7 @@ void readImu(float& pitch, float& roll, float& yaw, float& ax, float& ay, float&
 }
 
 void onSendStatus(esp_now_send_status_t status) {
+  send_in_flight = false;
   if (status != ESP_NOW_SEND_SUCCESS) {
     Serial.println("[RIGHT] ESP-NOW send failed");
   }
@@ -278,10 +287,8 @@ void setup() {
   pinMode(FSR_PINKY_PIN, INPUT);
 
   if (!initImu()) {
-    Serial.println("[RIGHT] IMU init failed (MPU6050 not found or unreadable)");
-    while (true) {
-      delay(1000);
-    }
+    imu_ready = false;
+    Serial.println("[RIGHT] WARNING: IMU init failed (MPU6050 not found or unreadable); continuing with default IMU values");
   }
 
   if (!initEspNow()) {
@@ -298,6 +305,14 @@ void loop() {
   if ((now - last_send_ms) < SEND_INTERVAL_MS) {
     return;
   }
+
+  if (send_in_flight) {
+    if ((now - last_send_start_ms) < 200) {
+      return;
+    }
+    send_in_flight = false;
+  }
+
   last_send_ms = now;
 
   float pitch, roll, yaw, ax, ay, az;
@@ -330,8 +345,18 @@ void loop() {
     return;
   }
 
+  if (SERIAL_DEBUG_TX && (now - last_debug_tx_ms) >= SERIAL_DEBUG_INTERVAL_MS) {
+    last_debug_tx_ms = now;
+    Serial.print("[RIGHT] TX ");
+    Serial.println(payload);
+  }
+
   esp_err_t result = esp_now_send(HUB_MAC, reinterpret_cast<const uint8_t*>(payload), len);
-  if (result != ESP_OK) {
-    Serial.printf("[RIGHT] esp_now_send error=%d\n", result);
+  if (result == ESP_OK) {
+    send_in_flight = true;
+    last_send_start_ms = now;
+  } else {
+    send_in_flight = false;
+    Serial.printf("[RIGHT] esp_now_send error=%d (%s)\n", result, esp_err_to_name(result));
   }
 }

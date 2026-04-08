@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
+#include <esp_err.h>
 #include <esp_now.h>
 #include <esp_wifi.h>
 #include <ArduinoJson.h>
@@ -20,12 +21,14 @@ static uint8_t HUB_MAC[6] = {0x4c, 0xc3, 0x82, 0xcc, 0xd0, 0x04};
 static const char* GLOVE_ID = "L";
 static const uint8_t ESPNOW_CHANNEL = 1;
 static const uint32_t SEND_INTERVAL_MS = 20;  // 50 Hz
+static const bool SERIAL_DEBUG_TX = true;
+static const uint32_t SERIAL_DEBUG_INTERVAL_MS = 250;
 
 // Update these pins to match your wiring.
-static const int FLEX_INDEX_PIN = 34;
-static const int FLEX_MIDDLE_PIN = 35;
-static const int FLEX_RING_PIN = 32;
-static const int FLEX_PINKY_PIN = 33;
+static const int FLEX_INDEX_PIN = 25;
+static const int FLEX_MIDDLE_PIN = 32;
+static const int FLEX_RING_PIN = 33;
+static const int FLEX_PINKY_PIN = 34;
 
 // MPU6050 IMU (I2C). Adjust pins/address only if your wiring differs.
 static const int IMU_SDA_PIN = 21;
@@ -51,6 +54,9 @@ static uint32_t imu_last_us = 0;
 
 uint32_t seq_no = 0;
 uint32_t last_send_ms = 0;
+uint32_t last_debug_tx_ms = 0;
+volatile bool send_in_flight = false;
+uint32_t last_send_start_ms = 0;
 
 float normalizeFlex(int raw) {
   float v = (float)raw / 4095.0f;
@@ -227,6 +233,7 @@ void readImu(float& pitch, float& roll, float& yaw, float& ax, float& ay, float&
 }
 
 void onSendStatus(esp_now_send_status_t status) {
+  send_in_flight = false;
   if (status != ESP_NOW_SEND_SUCCESS) {
     Serial.println("[LEFT] ESP-NOW send failed");
   }
@@ -278,10 +285,8 @@ void setup() {
   pinMode(FLEX_PINKY_PIN, INPUT);
 
   if (!initImu()) {
-    Serial.println("[LEFT] IMU init failed (MPU6050 not found or unreadable)");
-    while (true) {
-      delay(1000);
-    }
+    imu_ready = false;
+    Serial.println("[LEFT] WARNING: IMU init failed (MPU6050 not found or unreadable); continuing with default IMU values");
   }
 
   if (!initEspNow()) {
@@ -298,6 +303,14 @@ void loop() {
   if ((now - last_send_ms) < SEND_INTERVAL_MS) {
     return;
   }
+
+  if (send_in_flight) {
+    if ((now - last_send_start_ms) < 200) {
+      return;
+    }
+    send_in_flight = false;
+  }
+
   last_send_ms = now;
 
   float pitch, roll, yaw, ax, ay, az;
@@ -309,11 +322,16 @@ void loop() {
   doc["seq"] = seq_no++;
   doc["t"] = now;
 
+  int flex_index_raw = analogRead(FLEX_INDEX_PIN);
+  int flex_middle_raw = analogRead(FLEX_MIDDLE_PIN);
+  int flex_ring_raw = analogRead(FLEX_RING_PIN);
+  int flex_pinky_raw = analogRead(FLEX_PINKY_PIN);
+
   JsonObject flex = doc.createNestedObject("flex");
-  flex["index"] = normalizeFlex(analogRead(FLEX_INDEX_PIN));
-  flex["middle"] = normalizeFlex(analogRead(FLEX_MIDDLE_PIN));
-  flex["ring"] = normalizeFlex(analogRead(FLEX_RING_PIN));
-  flex["pinky"] = normalizeFlex(analogRead(FLEX_PINKY_PIN));
+  flex["index"] = normalizeFlex(flex_index_raw);
+  flex["middle"] = normalizeFlex(flex_middle_raw);
+  flex["ring"] = normalizeFlex(flex_ring_raw);
+  flex["pinky"] = normalizeFlex(flex_pinky_raw);
 
   JsonObject imu = doc.createNestedObject("imu");
   imu["PITCH"] = pitch;
@@ -330,8 +348,20 @@ void loop() {
     return;
   }
 
+  if (SERIAL_DEBUG_TX && (now - last_debug_tx_ms) >= SERIAL_DEBUG_INTERVAL_MS) {
+    last_debug_tx_ms = now;
+    Serial.printf("[LEFT] RAW flex INDEX=%4d MIDDLE=%4d RING=%4d PINKY=%4d\n",
+                  flex_index_raw, flex_middle_raw, flex_ring_raw, flex_pinky_raw);
+    Serial.print("[LEFT] TX ");
+    Serial.println(payload);
+  }
+
   esp_err_t result = esp_now_send(HUB_MAC, reinterpret_cast<const uint8_t*>(payload), len);
-  if (result != ESP_OK) {
-    Serial.printf("[LEFT] esp_now_send error=%d\n", result);
+  if (result == ESP_OK) {
+    send_in_flight = true;
+    last_send_start_ms = now;
+  } else {
+    send_in_flight = false;
+    Serial.printf("[LEFT] esp_now_send error=%d (%s)\n", result, esp_err_to_name(result));
   }
 }

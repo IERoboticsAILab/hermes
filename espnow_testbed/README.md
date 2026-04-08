@@ -114,7 +114,7 @@ python3 hermes_gateway.py --config config.example.json
 
 - If either glove stream is stale (`glove_timeout_ms`), gateway forces deadman false for safety.
 - Left glove firmware currently assumes **no left FSR hardware** and sends flex + IMU only.
-- Right glove firmware assumes FSR + IMU only; current FSR pins are GPIO25/GPIO26/GPIO27/GPIO14 and should match your wiring.
+- Right glove firmware assumes FSR + IMU only; current FSR pins are GPIO32/GPIO33/GPIO34/GPIO35. These are ADC1 pins, which avoids ESP-NOW/Wi-Fi conflicts on classic ESP32 boards.
 - MPU6050 IMU read functions are implemented in both glove firmware files; adjust I2C pins/config if your hardware differs.
 - Selection group slots are currently `A`-`G` (7 groups), and robot bindings cover `r1`-`r6`.
 - `FOLLOW_ME_TOGGLE` now behaves as a true toggle (first gesture enables, next gesture disables).
