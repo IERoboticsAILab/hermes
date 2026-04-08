@@ -34,7 +34,7 @@ class KeyboardTeleopNode(Node):
         super().__init__("keyboard_teleop_node")
 
         self.declare_parameter("packet_topic", "/hermes/command_packets")
-        self.declare_parameter("robot_ids", ["r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8"])
+        self.declare_parameter("robot_ids", ["r1", "r2", "r3", "r4", "r5", "r6"])
         self.declare_parameter("tick_hz", 30.0)
         self.declare_parameter("base_linear", 1.0)
         self.declare_parameter("base_angular", 1.0)

@@ -188,10 +188,6 @@ class VestSerialBridgeNode(Node):
         return int(self.get_clock().now().nanoseconds)
 
     @staticmethod
-    def _now_ms() -> int:
-        return int(rclpy.clock.Clock().now().nanoseconds / 1_000_000)
-
-    @staticmethod
     def _safe_flex(pkt: Dict[str, Any]) -> Dict[str, float]:
         flex = pkt.get("flex", {})
         return {
@@ -256,8 +252,8 @@ class VestSerialBridgeNode(Node):
             # traffic goes stale, matching the old single-process gateway behavior.
             raw = {
                 "time_ms": now_ms,
-                "flex": {"L": {}, "R": {}},
-                "fsr_pressed": {"L": {}, "R": {}},
+                "flex": {},
+                "fsr_pressed": {},
                 "imu": {},
             }
             self._last_glove_ids = [gid for gid in ("L", "R") if self._is_fresh(gid, now_ms)]

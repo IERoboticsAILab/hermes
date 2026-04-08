@@ -27,7 +27,7 @@ DEFAULT_CONFIG = {
     "serial_port": "/dev/ttyUSB0",
     "baudrate": 921600,
     "glove_timeout_ms": 200,
-    "robot_ids": ["r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8"],
+    "robot_ids": ["r1", "r2", "r3", "r4", "r5", "r6"],
     "centroid": [0.0, 0.0],
     "command_output": {
         "mode": "print",  # print | udp
@@ -191,7 +191,7 @@ class HermesGateway:
         centroid = config.get("centroid", [0.0, 0.0])
         self.centroid_xy = (float(centroid[0]), float(centroid[1]))
 
-        robot_ids = [str(r) for r in config.get("robot_ids", ["r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8"])]
+        robot_ids = [str(r) for r in config.get("robot_ids", ["r1", "r2", "r3", "r4", "r5", "r6"])]
         self.gesture_state = GestureState()
         self.recognizer = GestureRecognizer()
         self.safety = SafetyEvaluator()

@@ -58,11 +58,9 @@ ROBOT_BINDINGS = {
     ("R", "MIDDLE", "TAP"): "r2",
     ("R", "RING", "TAP"): "r3",
     ("R", "PINKY", "TAP"): "r4",
-    # Hold => r5-r8
+    # Hold => r5-r6
     ("R", "INDEX", "HOLD"): "r5",
     ("R", "MIDDLE", "HOLD"): "r6",
-    ("R", "RING", "HOLD"): "r7",
-    ("R", "PINKY", "HOLD"): "r8",
 }
 
 # -----------------------------
@@ -152,7 +150,7 @@ DRIVE_COMMANDS = {
 SELECTION_COMMANDS = {
     "SELECT_ROBOT": {
         "id": "select.robot",
-        "desc": "select an individual robot r1-r8",
+        "desc": "select an individual robot r1-r6",
         "requires": {"mode": "SELECTION", "L_posture": "POINT"},
         "gesture_map": ROBOT_BINDINGS,
         "effect": {"type": "select_robot"},

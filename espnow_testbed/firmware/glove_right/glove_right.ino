@@ -10,22 +10,18 @@
 #define ESP_ARDUINO_VERSION_MAJOR 2
 #endif
 
-// --------------------------------
+// --------------------------------------------
 // GLOVE RIGHT FIRMWARE (ESP-NOW TX)
-// --------------------------------
-// Fill in the hub (master) MAC here.
-// This is the ESP32 connected to the Raspberry Pi.
+// Right glove hardware: FSR sensors + MPU6050.
+// Left glove owns flex/posture sensing.
+// --------------------------------------------
+// Fill in the vest/hub ESP32 MAC here.
+// This is the ESP32 on the vest, connected to the Raspberry Pi over USB serial.
 static uint8_t HUB_MAC[6] = {0xAA, 0xBB, 0xCC, 0x11, 0x22, 0x33};
 
 static const char* GLOVE_ID = "R";
 static const uint8_t ESPNOW_CHANNEL = 1;
 static const uint32_t SEND_INTERVAL_MS = 20;  // 50 Hz
-
-// Update these pins to match your wiring.
-static const int FLEX_INDEX_PIN = 34;
-static const int FLEX_MIDDLE_PIN = 35;
-static const int FLEX_RING_PIN = 32;
-static const int FLEX_PINKY_PIN = 33;
 
 static const int FSR_INDEX_PIN = 25;
 static const int FSR_MIDDLE_PIN = 26;
@@ -58,13 +54,6 @@ static uint32_t imu_last_us = 0;
 
 uint32_t seq_no = 0;
 uint32_t last_send_ms = 0;
-
-float normalizeFlex(int raw) {
-  float v = (float)raw / 4095.0f;
-  if (v < 0.0f) v = 0.0f;
-  if (v > 1.0f) v = 1.0f;
-  return v;
-}
 
 bool fsrPressed(int pin) {
   return analogRead(pin) > FSR_PRESS_THRESHOLD;
@@ -283,11 +272,6 @@ void setup() {
   Serial.begin(115200);
   analogReadResolution(12);
 
-  pinMode(FLEX_INDEX_PIN, INPUT);
-  pinMode(FLEX_MIDDLE_PIN, INPUT);
-  pinMode(FLEX_RING_PIN, INPUT);
-  pinMode(FLEX_PINKY_PIN, INPUT);
-
   pinMode(FSR_INDEX_PIN, INPUT);
   pinMode(FSR_MIDDLE_PIN, INPUT);
   pinMode(FSR_RING_PIN, INPUT);
@@ -324,12 +308,6 @@ void loop() {
   doc["id"] = GLOVE_ID;
   doc["seq"] = seq_no++;
   doc["t"] = now;
-
-  JsonObject flex = doc.createNestedObject("flex");
-  flex["index"] = normalizeFlex(analogRead(FLEX_INDEX_PIN));
-  flex["middle"] = normalizeFlex(analogRead(FLEX_MIDDLE_PIN));
-  flex["ring"] = normalizeFlex(analogRead(FLEX_RING_PIN));
-  flex["pinky"] = normalizeFlex(analogRead(FLEX_PINKY_PIN));
 
   JsonObject fsr = doc.createNestedObject("fsr");
   fsr["INDEX"] = fsrPressed(FSR_INDEX_PIN);

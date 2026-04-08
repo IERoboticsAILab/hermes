@@ -2,7 +2,7 @@
   "serial_port": "/dev/ttyUSB0",
   "baudrate": 921600,
   "glove_timeout_ms": 200,
-  "robot_ids": ["r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8"],
+  "robot_ids": ["r1", "r2", "r3", "r4", "r5", "r6"],
   "centroid": [0.0, 0.0],
   "behavior_runtime": {
     "home_xy": [0.0, 0.0],

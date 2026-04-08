@@ -50,7 +50,7 @@ Keyboard controls:
   - `2` FORMATION mode
   - `3` PARAMS mode
   - `m` deadman on/off
-  - `g` select all robots (`r1`-`r8`)
+  - `g` select all robots (`r1`-`r6`)
   - `space` send zero drive command
   - `h` help
 - DRIVE mode:
@@ -94,6 +94,7 @@ Important:
 - Robots must share one consistent frame (`map` recommended).
 - `robot_state_beacon_node` now uses TF lookup `map -> base_link` by default.
 - If TF is not ready yet, you can temporarily set `use_tf_pose:=false fallback_to_odom:=true` (not swarm-accurate across robots).
+- If multiple physical ROSbots share one DDS graph, a global `/cmd_vel` can be heard by every base controller. Use per-robot namespaced command topics or a robot-local command bridge before treating multi-robot `/cmd_vel` execution as isolated.
 
 Validation commands:
 
@@ -228,7 +229,7 @@ This is useful for bring-up only and is less accurate for multi-robot relative g
 
 ## Current Defaults
 
-- `robot_ids` default to `r1`-`r8`.
+- `robot_ids` default to `r1`-`r6`.
 - Selection groups are currently `A`-`G`.
 
 ## Example Raw Input
@@ -238,7 +239,7 @@ This is useful for bring-up only and is less accurate for multi-robot relative g
   "time_ms": 1730000000000,
   "flex": {
     "L": {"index": 0.1, "middle": 0.2, "ring": 0.2, "pinky": 0.2},
-    "R": {"index": 0.7, "middle": 0.7, "ring": 0.7, "pinky": 0.7}
+    "R": {"index": 0.0, "middle": 0.0, "ring": 0.0, "pinky": 0.0}
   },
   "fsr_pressed": {
     "L": {"INDEX": false, "MIDDLE": false, "RING": false, "PINKY": false},

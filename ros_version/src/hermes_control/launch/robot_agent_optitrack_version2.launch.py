@@ -16,10 +16,10 @@ def _config_params(config_path: str) -> dict:
 
 
 def _pick(override: str, fallback: object, default: str) -> str:
-    value = str(override).strip()
+    value = "" if override is None else str(override).strip()
     if value:
         return value
-    value = str(fallback).strip()
+    value = "" if fallback is None else str(fallback).strip()
     if value:
         return value
     return default

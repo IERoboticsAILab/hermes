@@ -11,18 +11,19 @@ It converts wearable sensor streams into high-level swarm intent, then executes 
 | Area | Path | Purpose |
 |---|---|---|
 | Core gesture + swarm logic | `gestures/`, `swarm/`, `main.py` | Pure-Python command and state pipeline |
-| Hardware + transmission testbed | `espnow_testbed/` | ESP32 glove firmware, ESP-NOW hub, Raspberry Pi gateway |
+| Hardware + transmission testbed | `espnow_testbed/` | ESP32 glove firmware and the legacy non-ROS ESP-NOW gateway path |
 | ROS2 packaged version | `ros_version/` | ROS2 nodes/launch files duplicating current logic |
 | Tests | `tests/` | Formation, behavior, and safety/gateway unit tests |
 
 ## End-to-End Data Flow
 
 1. Left and right glove ESP32 boards sample sensors and create JSON payloads.
-2. Both gloves send payloads over ESP-NOW to a hub ESP32.
-3. Hub ESP32 forwards validated packets over USB serial to a Raspberry Pi.
-4. Pi gateway fuses both gloves into one raw input sample.
+2. Both gloves send payloads over ESP-NOW to the vest ESP32.
+3. The vest ESP32 forwards validated packets over USB serial to a Raspberry Pi.
+4. The Pi fuses both gloves into one raw input sample.
 5. Gesture/safety/swarm logic produces command packets and swarm intent.
-6. Output is either:
+6. The Pi also sends haptic motor frames back to the vest ESP32 over the same USB serial link.
+7. Output is either:
    - printed/UDP commands (testbed), or
    - ROS2 topics consumed by robot agents.
 
@@ -30,12 +31,13 @@ It converts wearable sensor streams into high-level swarm intent, then executes 
 
 ### Path A: ESP-NOW + Raspberry Pi Testbed (No ROS)
 
-Use this first to validate transmission and command logic.
+Use this first to validate transmission and command logic. This is the legacy standalone path; the final ROS wearable path uses `ros_version/firmware/esp32_haptic_vest/esp32_haptic_vest.ino` as the vest ESP firmware.
 
 1. Flash firmware in `espnow_testbed/firmware/`:
    - `glove_left/glove_left.ino`
    - `glove_right/glove_right.ino`
-   - `hub_master/hub_master.ino`
+   - `hub_master/hub_master.ino` for the standalone legacy gateway path, or
+   - `ros_version/firmware/esp32_haptic_vest/esp32_haptic_vest.ino` for the final vest-as-hub hardware
 2. Insert MAC addresses in firmware placeholders.
 3. Configure Pi gateway:
    - `espnow_testbed/pi_gateway/config.example.json`
@@ -73,12 +75,13 @@ Details: [ros_version/README.md](./ros_version/README.md)
 - ESP-NOW MAC placeholders:
   - `espnow_testbed/firmware/glove_left/glove_left.ino`
   - `espnow_testbed/firmware/glove_right/glove_right.ino`
-  - `espnow_testbed/firmware/hub_master/hub_master.ino`
+  - `ros_version/firmware/esp32_haptic_vest/esp32_haptic_vest.ino` for the final vest ESP
+  - `espnow_testbed/firmware/hub_master/hub_master.ino` only for the standalone legacy testbed
 - Pi gateway runtime options:
   - `espnow_testbed/pi_gateway/config.example.json`
   - `command_output.mode`: `print` or `udp`
   - `command_output.udp_host` / `udp_port` for network output
-- Default robot IDs in current logic: `r1` to `r8`
+- Default robot IDs in current logic: `r1` to `r6`
 - Default selection group slots: `A` to `G`
 
 ## Development and Validation
@@ -88,6 +91,7 @@ Details: [ros_version/README.md](./ros_version/README.md)
 ```bash
 arduino-cli compile --fqbn esp32:esp32:esp32 espnow_testbed/firmware/glove_left
 arduino-cli compile --fqbn esp32:esp32:esp32 espnow_testbed/firmware/glove_right
+arduino-cli compile --fqbn esp32:esp32:esp32 ros_version/firmware/esp32_haptic_vest
 arduino-cli compile --fqbn esp32:esp32:esp32 espnow_testbed/firmware/hub_master
 ```
 

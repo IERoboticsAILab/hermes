@@ -13,8 +13,8 @@
 // -------------------------------
 // GLOVE LEFT FIRMWARE (ESP-NOW TX)
 // -------------------------------
-// Fill in the hub (master) MAC here.
-// This is the ESP32 connected to the Raspberry Pi.
+// Fill in the vest/hub ESP32 MAC here.
+// This is the ESP32 on the vest, connected to the Raspberry Pi over USB serial.
 static uint8_t HUB_MAC[6] = {0xAA, 0xBB, 0xCC, 0x11, 0x22, 0x33};
 
 static const char* GLOVE_ID = "L";

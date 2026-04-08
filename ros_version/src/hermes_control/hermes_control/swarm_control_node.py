@@ -19,7 +19,7 @@ class SwarmControlNode(Node):
         self.declare_parameter("swarm_state_topic", "/hermes/swarm_state")
         self.declare_parameter("swarm_intent_topic", "/hermes/swarm_intent")
         self.declare_parameter("intent_hz", 10.0)
-        self.declare_parameter("robot_ids", ["r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8"])
+        self.declare_parameter("robot_ids", ["r1", "r2", "r3", "r4", "r5", "r6"])
 
         packet_topic = str(self.get_parameter("packet_topic").value)
         centroid_topic = str(self.get_parameter("centroid_topic").value)
@@ -122,6 +122,20 @@ class SwarmControlNode(Node):
         packet = self._decode_packet(msg.data)
         if packet is None:
             return
+
+        # Gesture recognition and swarm control are separate ROS nodes. The
+        # gesture node uses packet domains to encode the active left-hand mode,
+        # so mirror that domain here before applying the effect.
+        domain = str(packet.get("domain", "")).strip().lower()
+        mode_from_domain = {
+            "drive": "DRIVE",
+            "selection": "SELECTION",
+            "formation": "FORMATION",
+            "behavior": "BEHAVIOR",
+            "params": "PARAMS",
+        }.get(domain)
+        if mode_from_domain:
+            self._gesture_state.mode = mode_from_domain
 
         self._swarm.handle_packet(packet, self._gesture_state, centroid_xy=self._centroid)
         self._intent_seq += 1
