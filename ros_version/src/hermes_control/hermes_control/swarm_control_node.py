@@ -20,6 +20,7 @@ class SwarmControlNode(Node):
         self.declare_parameter("swarm_intent_topic", "/hermes/swarm_intent")
         self.declare_parameter("intent_hz", 10.0)
         self.declare_parameter("robot_ids", ["r1", "r2", "r3", "r4", "r5", "r6"])
+        self.declare_parameter("auto_select_all_on_start", True)
 
         packet_topic = str(self.get_parameter("packet_topic").value)
         centroid_topic = str(self.get_parameter("centroid_topic").value)
@@ -27,6 +28,7 @@ class SwarmControlNode(Node):
         swarm_intent_topic = str(self.get_parameter("swarm_intent_topic").value)
         intent_hz = float(self.get_parameter("intent_hz").value)
         robot_ids = [str(v) for v in self.get_parameter("robot_ids").value]
+        auto_select_all = bool(self.get_parameter("auto_select_all_on_start").value)
 
         self._centroid: Tuple[float, float] = (0.0, 0.0)
         self._gesture_state = GestureState()
@@ -38,6 +40,16 @@ class SwarmControlNode(Node):
         self._packet_sub = self.create_subscription(String, packet_topic, self._on_packet, 50)
         self._centroid_sub = self.create_subscription(Point, centroid_topic, self._on_centroid, 20)
         self._intent_timer = self.create_timer(max(0.02, 1.0 / max(1e-6, intent_hz)), self._publish_intent)
+
+        if auto_select_all and robot_ids:
+            self._swarm.handle_packet(
+                {"effect": {"type": "set_selection", "value": robot_ids}},
+                self._gesture_state,
+                centroid_xy=self._centroid,
+            )
+            self.get_logger().info(f"Startup selection set to all robots: {sorted(self._swarm.selection)}")
+            self._publish_state()
+            self._publish_intent()
 
         self.get_logger().info(
             f"Swarm control ready. packet_topic={packet_topic}, centroid_topic={centroid_topic}, "
