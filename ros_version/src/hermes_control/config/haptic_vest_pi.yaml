@@ -7,7 +7,7 @@ haptic_vest_node:
     use_serial_output: true
     serial_frame_topic: /hermes/vest_serial_tx
     robot_ids: [r1, r2, r3, r4, r5, r6]
-    motor_robot_ids: [r1, r2, r3, r4, r5, r6]
+    motor_robot_ids: [r5, r6, r1, r3, r2, r4]
     motor_labels: [left_sleeve, right_sleeve, left_shoulder, right_shoulder, left_torso, right_torso]
     robot_state_topic: /hermes/robot_state_beacon
     robot_status_topic: /hermes/robot_haptic_status

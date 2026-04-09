@@ -152,7 +152,7 @@ class HapticVestNode(Node):
         self.declare_parameter("serial_frame_topic", "/hermes/vest_serial_tx")
 
         self.declare_parameter("robot_ids", ["r1", "r2", "r3", "r4", "r5", "r6"])
-        self.declare_parameter("motor_robot_ids", ["r1", "r2", "r3", "r4", "r5", "r6"])
+        self.declare_parameter("motor_robot_ids", ["r5", "r6", "r1", "r3", "r2", "r4"])
         self.declare_parameter(
             "motor_labels",
             ["left_sleeve", "right_sleeve", "left_shoulder", "right_shoulder", "left_torso", "right_torso"],

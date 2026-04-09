@@ -29,8 +29,8 @@
 // - Keep the Pi-side serial baud rate aligned with SERIAL_BAUD.
 // ---------------------------------------------------------------------------
 
-static uint8_t LEFT_GLOVE_MAC[6] = {0x40, 0xf5, 0x20, 0xbd, 0xc9, 0x08};
-static uint8_t RIGHT_GLOVE_MAC[6] = {0x30, 0xc6, 0xf7, 0x20, 0x50, 0x38};
+static uint8_t LEFT_GLOVE_MAC[6] = {0x40, 0xf5, 0x20, 0xbd, 0xc0, 0xac};
+static uint8_t RIGHT_GLOVE_MAC[6] = {0x40, 0xf5, 0x20, 0xbd, 0xc9, 0x08};
 
 static const uint8_t ESPNOW_CHANNEL = 1;
 static const uint32_t SERIAL_BAUD = 921600;
