@@ -92,8 +92,8 @@ class GestureRecognizer:
         seq = fsr_out["sequence"]
 
         imu_raw = raw.get("imu", {})
-        imu_R_raw = imu_raw.get("R") or {}
-        imu_R = self.imu_filter.update(imu_R_raw) if imu_R_raw else None
+        control_imu_raw = imu_raw.get("R") or imu_raw.get("L") or {}
+        imu_R = self.imu_filter.update(control_imu_raw) if control_imu_raw else None
         accel_L = self._coerce_left_accel(imu_raw)
         accel_R = self._coerce_right_accel(imu_raw)
 

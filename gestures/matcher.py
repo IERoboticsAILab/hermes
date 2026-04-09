@@ -213,7 +213,7 @@ def match_gesture(event: GestureEvent, state: GestureState, registry: Dict[str, 
         gesture_spec = cmd.get("gesture", {})
 
         # Some safety gestures are handled by SafetyEvaluator, not by matcher.
-        if "L_accel_palm_up" in gesture_spec or "BOTH_ACCEL_SHAKE" in gesture_spec:
+        if "L_accel_palm_up" in gesture_spec or "L_ACCEL_SHAKE" in gesture_spec:
             continue
 
         if _match_simple_gesture(gesture_spec, event):

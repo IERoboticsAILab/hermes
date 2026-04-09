@@ -85,9 +85,9 @@ SAFETY_COMMANDS = {
     },
     "ESTOP": {
         "id": "safety.estop",
-        "desc": "immediate stop on sustained high acceleration from both gloves (shake)",
+        "desc": "immediate stop on sustained high acceleration from the left glove (shake)",
         "gesture": {
-            "BOTH_ACCEL_SHAKE": {
+            "L_ACCEL_SHAKE": {
                 "threshold_g": 0.75,
                 "release_threshold_g": 0.35,
                 "hold_ms": 220,
@@ -118,7 +118,7 @@ SAFETY_COMMANDS = {
 DRIVE_COMMANDS = {
     "MANUAL_DRIVE": {
         "id": "drive.manual",
-        "desc": "drive selected set with right-hand IMU while deadman held",
+        "desc": "drive selected set with control IMU while deadman held",
         "requires": {"mode": "DRIVE", "L_posture": "OPEN", "deadman": True},
         "inputs": {"imu": ["PITCH", "ROLL", "YAW"]},
         "mapping": {
@@ -206,7 +206,7 @@ FORMATION_COMMANDS = {
     },
     "SET_FORMATION_ORIENTATION": {
         "id": "formation.set_orientation",
-        "desc": "rotate formation heading while held",
+        "desc": "rotate formation heading while held using control IMU yaw",
         "requires": {"mode": "FORMATION", "L_posture": "FIST"},
         "gesture": {"R_fsr": {"finger": "INDEX", "action": "HOLD"}},
         "inputs": {"imu": ["YAW"]},
@@ -214,7 +214,7 @@ FORMATION_COMMANDS = {
     },
     "SET_SPACING_CONTINUOUS": {
         "id": "formation.set_spacing_cont",
-        "desc": "adjust spacing while held using pitch",
+        "desc": "adjust spacing while held using control IMU pitch",
         "requires": {"mode": "FORMATION", "L_posture": "FIST"},
         "gesture": {"R_fsr": {"finger": "RING", "action": "HOLD"}},
         "inputs": {"imu": ["PITCH"]},

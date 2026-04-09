@@ -25,7 +25,7 @@ static const bool SERIAL_DEBUG_TX = true;
 static const uint32_t SERIAL_DEBUG_INTERVAL_MS = 250;
 
 // Update these pins to match your wiring.
-static const int FLEX_INDEX_PIN = 25;
+static const int FLEX_INDEX_PIN = 35;
 static const int FLEX_MIDDLE_PIN = 32;
 static const int FLEX_RING_PIN = 33;
 static const int FLEX_PINKY_PIN = 34;

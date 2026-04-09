@@ -25,6 +25,7 @@ static const uint8_t ESPNOW_CHANNEL = 1;
 static const uint32_t SEND_INTERVAL_MS = 20;  // 50 Hz
 static const bool SERIAL_DEBUG_TX = true;
 static const uint32_t SERIAL_DEBUG_INTERVAL_MS = 250;
+static const bool RIGHT_GLOVE_HAS_IMU = false;
 
 // Use ADC1 pins here. ADC2 pins such as GPIO25/GPIO26/GPIO27/GPIO14
 // conflict with Wi-Fi/ESP-NOW on classic ESP32 boards.
@@ -286,9 +287,14 @@ void setup() {
   pinMode(FSR_RING_PIN, INPUT);
   pinMode(FSR_PINKY_PIN, INPUT);
 
-  if (!initImu()) {
+  if (RIGHT_GLOVE_HAS_IMU) {
+    if (!initImu()) {
+      imu_ready = false;
+      Serial.println("[RIGHT] WARNING: IMU init failed (MPU6050 not found or unreadable); continuing without right-hand IMU");
+    }
+  } else {
     imu_ready = false;
-    Serial.println("[RIGHT] WARNING: IMU init failed (MPU6050 not found or unreadable); continuing with default IMU values");
+    Serial.println("[RIGHT] IMU disabled; running FSR-only right glove");
   }
 
   if (!initEspNow()) {
@@ -315,8 +321,10 @@ void loop() {
 
   last_send_ms = now;
 
-  float pitch, roll, yaw, ax, ay, az;
-  readImu(pitch, roll, yaw, ax, ay, az);
+  float pitch = 0.0f, roll = 0.0f, yaw = 0.0f, ax = 0.0f, ay = 0.0f, az = -1.0f;
+  if (RIGHT_GLOVE_HAS_IMU) {
+    readImu(pitch, roll, yaw, ax, ay, az);
+  }
 
   StaticJsonDocument<512> doc;
   doc["v"] = 1;
@@ -330,13 +338,15 @@ void loop() {
   fsr["RING"] = fsrPressed(FSR_RING_PIN);
   fsr["PINKY"] = fsrPressed(FSR_PINKY_PIN);
 
-  JsonObject imu = doc.createNestedObject("imu");
-  imu["PITCH"] = pitch;
-  imu["ROLL"] = roll;
-  imu["YAW"] = yaw;
-  imu["AX"] = ax;
-  imu["AY"] = ay;
-  imu["AZ"] = az;
+  if (RIGHT_GLOVE_HAS_IMU) {
+    JsonObject imu = doc.createNestedObject("imu");
+    imu["PITCH"] = pitch;
+    imu["ROLL"] = roll;
+    imu["YAW"] = yaw;
+    imu["AX"] = ax;
+    imu["AY"] = ay;
+    imu["AZ"] = az;
+  }
 
   char payload[250];
   size_t len = serializeJson(doc, payload, sizeof(payload));

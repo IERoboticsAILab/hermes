@@ -35,7 +35,6 @@ def test_shake_estop_fires_after_required_hold() -> None:
     # 2g vector magnitude => dynamic accel ~= 1g above gravity baseline.
     ev_shake = GestureEvent(
         accel_L={"AX": 2.0, "AY": 0.0, "AZ": 0.0},
-        accel_R={"AX": 2.0, "AY": 0.0, "AZ": 0.0},
     )
     safety.tick(ev_shake, state, COMMAND_REGISTRY, now_ms=0)
     pkt = safety.tick(ev_shake, state, COMMAND_REGISTRY, now_ms=250)

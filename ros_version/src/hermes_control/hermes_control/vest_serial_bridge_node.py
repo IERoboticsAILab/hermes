@@ -208,8 +208,12 @@ class VestSerialBridgeNode(Node):
         }
 
     @staticmethod
-    def _safe_right_imu(pkt: Dict[str, Any]) -> Dict[str, float]:
+    def _safe_right_imu(pkt: Dict[str, Any]) -> Optional[Dict[str, float]]:
         imu = pkt.get("imu", {})
+        if not isinstance(imu, dict):
+            return None
+        if not any(key in imu for key in ("PITCH", "ROLL", "YAW", "AX", "AY", "AZ", "X", "Y", "Z")):
+            return None
         return {
             "PITCH": _as_float(imu.get("PITCH"), 0.0),
             "ROLL": _as_float(imu.get("ROLL"), 0.0),
@@ -220,9 +224,12 @@ class VestSerialBridgeNode(Node):
         }
 
     @staticmethod
-    def _safe_left_accel(pkt: Dict[str, Any]) -> Dict[str, float]:
+    def _safe_left_imu(pkt: Dict[str, Any]) -> Dict[str, float]:
         imu = pkt.get("imu", {})
         return {
+            "PITCH": _as_float(imu.get("PITCH"), 0.0),
+            "ROLL": _as_float(imu.get("ROLL"), 0.0),
+            "YAW": _as_float(imu.get("YAW"), 0.0),
             "AX": _as_float(imu.get("AX", imu.get("X")), 0.0),
             "AY": _as_float(imu.get("AY", imu.get("Y")), 0.0),
             "AZ": _as_float(imu.get("AZ", imu.get("Z")), 0.0),
@@ -240,11 +247,15 @@ class VestSerialBridgeNode(Node):
         if left_fresh and right_fresh:
             left = self._latest_packets["L"]
             right = self._latest_packets["R"]
+            imu_payload = {"L": self._safe_left_imu(left)}
+            right_imu = self._safe_right_imu(right)
+            if right_imu is not None:
+                imu_payload["R"] = right_imu
             raw = {
                 "time_ms": now_ms,
                 "flex": {"L": self._safe_flex(left), "R": self._safe_flex(right)},
                 "fsr_pressed": {"L": self._safe_fsr(left), "R": self._safe_fsr(right)},
-                "imu": {"L": self._safe_left_accel(left), "R": self._safe_right_imu(right)},
+                "imu": imu_payload,
             }
             self._last_glove_ids = ["L", "R"]
         else:

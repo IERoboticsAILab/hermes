@@ -287,8 +287,12 @@ class HermesGateway:
         }
 
     @staticmethod
-    def _safe_right_imu(pkt: Dict[str, Any]) -> Dict[str, float]:
+    def _safe_right_imu(pkt: Dict[str, Any]) -> Optional[Dict[str, float]]:
         imu = pkt.get("imu", {})
+        if not isinstance(imu, dict):
+            return None
+        if not any(key in imu for key in ("PITCH", "ROLL", "YAW", "AX", "AY", "AZ", "X", "Y", "Z")):
+            return None
         return {
             "PITCH": float(imu.get("PITCH", 0.0)),
             "ROLL": float(imu.get("ROLL", 0.0)),
@@ -299,9 +303,12 @@ class HermesGateway:
         }
 
     @staticmethod
-    def _safe_left_accel(pkt: Dict[str, Any]) -> Dict[str, float]:
+    def _safe_left_imu(pkt: Dict[str, Any]) -> Dict[str, float]:
         imu = pkt.get("imu", {})
         return {
+            "PITCH": float(imu.get("PITCH", 0.0)),
+            "ROLL": float(imu.get("ROLL", 0.0)),
+            "YAW": float(imu.get("YAW", 0.0)),
             "AX": float(imu.get("AX", imu.get("X", 0.0))),
             "AY": float(imu.get("AY", imu.get("Y", 0.0))),
             "AZ": float(imu.get("AZ", imu.get("Z", 0.0))),
@@ -319,6 +326,13 @@ class HermesGateway:
         left = self.left_latest.packet
         right = self.right_latest.packet
 
+        imu_payload = {
+            "L": self._safe_left_imu(left),
+        }
+        right_imu = self._safe_right_imu(right)
+        if right_imu is not None:
+            imu_payload["R"] = right_imu
+
         raw = {
             "time_ms": int(time.time() * 1000),
             "flex": {
@@ -329,10 +343,7 @@ class HermesGateway:
                 "L": self._safe_fsr(left),
                 "R": self._safe_fsr(right),
             },
-            "imu": {
-                "R": self._safe_right_imu(right),
-                "L": self._safe_left_accel(left),
-            },
+            "imu": imu_payload,
         }
         return raw
 

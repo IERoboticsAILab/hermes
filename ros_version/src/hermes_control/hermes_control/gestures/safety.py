@@ -107,11 +107,11 @@ class SafetyEvaluator:
         if not cmd:
             return None
 
-        spec = cmd.get("gesture", {}).get("BOTH_ACCEL_SHAKE")
+        spec = cmd.get("gesture", {}).get("L_ACCEL_SHAKE")
         if spec is None:
             return None
 
-        if not event.accel_L or not event.accel_R:
+        if not event.accel_L:
             self.shake_estop_latch.above_since_ms = None
             self.shake_estop_latch.fired = False
             return None
@@ -120,13 +120,16 @@ class SafetyEvaluator:
         release_threshold_g = float(spec.get("release_threshold_g", threshold_g * 0.6))
         hold_ms = int(spec.get("hold_ms", 220))
 
-        l_dyn = abs(_norm3(_axis(event.accel_L, "AX", "X"), _axis(event.accel_L, "AY", "Y"), _axis(event.accel_L, "AZ", "Z")) - 1.0)
-        r_dyn = abs(_norm3(_axis(event.accel_R, "AX", "X"), _axis(event.accel_R, "AY", "Y"), _axis(event.accel_R, "AZ", "Z")) - 1.0)
+        l_dyn = abs(
+            _norm3(
+                _axis(event.accel_L, "AX", "X"),
+                _axis(event.accel_L, "AY", "Y"),
+                _axis(event.accel_L, "AZ", "Z"),
+            )
+            - 1.0
+        )
 
-        both_above = (l_dyn >= threshold_g) and (r_dyn >= threshold_g)
-        either_below_release = (l_dyn < release_threshold_g) or (r_dyn < release_threshold_g)
-
-        if both_above:
+        if l_dyn >= threshold_g:
             if self.shake_estop_latch.above_since_ms is None:
                 self.shake_estop_latch.above_since_ms = now_ms
 
@@ -139,9 +142,8 @@ class SafetyEvaluator:
                     "command_id": cmd["id"],
                     "effect": cmd["effect"],
                     "resolved": {
-                        "source": "BOTH_ACCEL_SHAKE",
+                        "source": "L_ACCEL_SHAKE",
                         "left_dyn_g": round(l_dyn, 3),
-                        "right_dyn_g": round(r_dyn, 3),
                         "threshold_g": threshold_g,
                         "hold_ms": hold_ms,
                         "dwell_ms": dwell_ms,
@@ -149,7 +151,7 @@ class SafetyEvaluator:
                 }
         else:
             self.shake_estop_latch.above_since_ms = None
-            if either_below_release:
+            if l_dyn < release_threshold_g:
                 self.shake_estop_latch.fired = False
 
         return None

@@ -29,11 +29,13 @@
 // - Keep the Pi-side serial baud rate aligned with SERIAL_BAUD.
 // ---------------------------------------------------------------------------
 
-static uint8_t LEFT_GLOVE_MAC[6] = {0x40, 0xf5, 0x20, 0xbd, 0xc0, 0xac};
+static uint8_t LEFT_GLOVE_MAC[6] = {0x40, 0xf5, 0x20, 0xbd, 0xc9, 0x08};
 static uint8_t RIGHT_GLOVE_MAC[6] = {0x30, 0xc6, 0xf7, 0x20, 0x50, 0x38};
 
 static const uint8_t ESPNOW_CHANNEL = 1;
 static const uint32_t SERIAL_BAUD = 921600;
+static const bool SERIAL_DEBUG_RX = true;
+static const bool SERIAL_DEBUG_MOTOR = true;
 
 static const int kMotorPinPairs[6][2] = {
   {4, 21},
@@ -164,6 +166,17 @@ void handleMotorFrame(const String& frame) {
     motorLevels[i] = constrain(parsed[i + 2], 0, 255);
   }
   lastMotorPacketMs = millis();
+
+  if (SERIAL_DEBUG_MOTOR) {
+    Serial.printf("[VEST] RX MOTOR seq=%d levels=[%d,%d,%d,%d,%d,%d]\n",
+                  parsed[1],
+                  motorLevels[0],
+                  motorLevels[1],
+                  motorLevels[2],
+                  motorLevels[3],
+                  motorLevels[4],
+                  motorLevels[5]);
+  }
 }
 
 void readSerialFrames() {
@@ -217,6 +230,40 @@ void forwardGlovePacket(const uint8_t* mac, const uint8_t* data, int len) {
   }
 
   serializeJson(outDoc, Serial);
+  Serial.println();
+
+  if (!SERIAL_DEBUG_RX) {
+    return;
+  }
+
+  if (err) {
+    Serial.printf("[VEST] RX GLOVE glove=%s mac=%s invalid_json len=%d raw=%s\n",
+                  outDoc["glove_id"] | "?",
+                  outDoc["sender_mac"] | "",
+                  len,
+                  payloadBuf);
+    return;
+  }
+
+  JsonVariant seqVar = payloadDoc["seq"];
+  JsonVariant tVar = payloadDoc["t"];
+  JsonVariantConst flexVar = payloadDoc["flex"];
+  JsonVariantConst fsrVar = payloadDoc["fsr"];
+
+  Serial.printf("[VEST] RX GLOVE glove=%s mac=%s seq=%ld t=%ld",
+                outDoc["glove_id"] | "?",
+                outDoc["sender_mac"] | "",
+                seqVar.isNull() ? -1L : seqVar.as<long>(),
+                tVar.isNull() ? -1L : tVar.as<long>());
+
+  if (!flexVar.isNull()) {
+    Serial.print(" flex=");
+    serializeJson(flexVar, Serial);
+  }
+  if (!fsrVar.isNull()) {
+    Serial.print(" fsr=");
+    serializeJson(fsrVar, Serial);
+  }
   Serial.println();
 }
 
