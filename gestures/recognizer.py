@@ -30,9 +30,9 @@ class GestureRecognizer:
         "R": {"INDEX":bool,"MIDDLE":bool,"RING":bool,"PINKY":bool}
       },
       "imu": {
+        # The active control IMU is taken from R when present, otherwise L.
         "R": {"PITCH":float,"ROLL":float,"YAW":float,"AX":float,"AY":float,"AZ":float},
-        # Any of these are accepted for left acceleration payload:
-        "L": {"AX":float,"AY":float,"AZ":float},  # or X/Y/Z
+        "L": {"PITCH":float,"ROLL":float,"YAW":float,"AX":float,"AY":float,"AZ":float},
         # Optional explicit right acceleration payload:
         "R_accel": {"AX":float,"AY":float,"AZ":float}  # or X/Y/Z
       }

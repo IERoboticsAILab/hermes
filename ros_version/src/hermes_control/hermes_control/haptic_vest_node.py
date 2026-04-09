@@ -145,7 +145,7 @@ class HapticVestNode(Node):
         super().__init__("haptic_vest_node")
 
         self.declare_parameter("serial_port", "/dev/ttyUSB0")
-        self.declare_parameter("baud_rate", 115200)
+        self.declare_parameter("baud_rate", 921600)
         self.declare_parameter("serial_hz", 20.0)
         self.declare_parameter("serial_retry_s", 2.0)
         self.declare_parameter("use_serial_output", True)

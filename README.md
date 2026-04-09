@@ -107,13 +107,13 @@ python3 -m py_compile espnow_testbed/pi_gateway/hermes_gateway.py
 
 ```bash
 python3 -m pip install pytest
-python3 -m pytest -q
+pytest -q
 ```
 
 ## Notes on Current Implementation
 
 - Left glove firmware is configured without left-hand FSR inputs.
-- Right glove firmware carries FSR inputs and IMU stream.
+- Right glove firmware is currently configured as FSR-only; the left glove provides the active control IMU stream.
 - ROS2 implementation includes decentralized slot bidding (`/hermes/slot_bids`) and robot-local tracking control.
 - ROS1 is not the active implementation in this repository.
 

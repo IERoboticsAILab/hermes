@@ -13,7 +13,8 @@
 
 // --------------------------------------------
 // GLOVE RIGHT FIRMWARE (ESP-NOW TX)
-// Right glove hardware: FSR sensors + MPU6050.
+// Right glove hardware: FSR sensors. MPU6050 support remains in code but is
+// currently disabled via RIGHT_GLOVE_HAS_IMU.
 // Left glove owns flex/posture sensing.
 // --------------------------------------------
 // Fill in the vest/hub ESP32 MAC here.

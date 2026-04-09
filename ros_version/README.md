@@ -246,8 +246,7 @@ This is useful for bring-up only and is less accurate for multi-robot relative g
     "R": {"INDEX": false, "MIDDLE": false, "RING": false, "PINKY": false}
   },
   "imu": {
-    "R": {"PITCH": 0.2, "ROLL": 0.1, "YAW": -0.1, "AX": 0.1, "AY": -0.2, "AZ": -1.1},
-    "L": {"AX": 0.0, "AY": 0.0, "AZ": -1.0}
+    "L": {"PITCH": 0.2, "ROLL": 0.1, "YAW": -0.1, "AX": 0.1, "AY": -0.2, "AZ": -1.1}
   }
 }
 ```
