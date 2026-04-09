@@ -5,12 +5,13 @@ from typing import Dict, Optional
 
 @dataclass
 class PostureCalibration:
-    # normalized flex values assumed [0..1] where 0=extended, 1=fully curled
-    ext_max: float = 0.35
-    curl_min: float = 0.65
+    # Current glove calibration treats values below ~0.9 as extended.
+    # Values at/above ~0.9 are treated as curled.
+    ext_max: float = 0.90
+    curl_min: float = 0.90
 
-    # deadband margin used to stabilize posture decisions around boundaries
-    hysteresis: float = 0.05
+    # Keep hysteresis off by default for this near-single-threshold calibration.
+    hysteresis: float = 0.0
 
 
 class PostureClassifier:
