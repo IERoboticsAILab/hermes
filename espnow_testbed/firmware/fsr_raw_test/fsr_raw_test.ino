@@ -6,10 +6,10 @@
 
 // Match the real right-glove firmware. These are ADC1 pins, so they still
 // work when the real firmware enables ESP-NOW/Wi-Fi.
-static const int FSR_INDEX_PIN = 32;
-static const int FSR_MIDDLE_PIN = 33;
-static const int FSR_RING_PIN = 34;
-static const int FSR_PINKY_PIN = 35;
+static const int FSR_INDEX_PIN = 34;
+static const int FSR_MIDDLE_PIN = 35;
+static const int FSR_RING_PIN = 32;
+static const int FSR_PINKY_PIN = 33;
 static const int FSR_PRESS_THRESHOLD = 1200;
 static const uint32_t PRINT_INTERVAL_MS = 100;
 

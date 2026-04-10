@@ -23,7 +23,7 @@ The current codebase is built around this live hardware/software split:
      - left-hand posture / mode selection
      - deadman IMU
      - left-glove shake `ESTOP`
-     - the active control IMU stream in the current configuration
+     - the active control IMU stream
 
 2. **Right glove ESP32**
    - Reads **FSR sensors** only in the current configuration

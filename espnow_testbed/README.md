@@ -60,7 +60,7 @@ File:
 Current role:
 - FSR sensors
 - ESP-NOW transmit to the vest / hub receiver
-- right-glove IMU support remains in code, but is disabled by `RIGHT_GLOVE_HAS_IMU = false`
+- right glove is FSR-only; it does not contain or transmit IMU data
 
 Current sensor ownership in the overall project:
 - right-hand discrete gesture commands only

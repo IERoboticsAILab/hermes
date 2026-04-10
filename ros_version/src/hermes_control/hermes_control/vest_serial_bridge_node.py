@@ -208,22 +208,6 @@ class VestSerialBridgeNode(Node):
         }
 
     @staticmethod
-    def _safe_right_imu(pkt: Dict[str, Any]) -> Optional[Dict[str, float]]:
-        imu = pkt.get("imu", {})
-        if not isinstance(imu, dict):
-            return None
-        if not any(key in imu for key in ("PITCH", "ROLL", "YAW", "AX", "AY", "AZ", "X", "Y", "Z")):
-            return None
-        return {
-            "PITCH": _as_float(imu.get("PITCH"), 0.0),
-            "ROLL": _as_float(imu.get("ROLL"), 0.0),
-            "YAW": _as_float(imu.get("YAW"), 0.0),
-            "AX": _as_float(imu.get("AX", imu.get("X")), 0.0),
-            "AY": _as_float(imu.get("AY", imu.get("Y")), 0.0),
-            "AZ": _as_float(imu.get("AZ", imu.get("Z")), 0.0),
-        }
-
-    @staticmethod
     def _safe_left_imu(pkt: Dict[str, Any]) -> Dict[str, float]:
         imu = pkt.get("imu", {})
         return {
@@ -256,9 +240,6 @@ class VestSerialBridgeNode(Node):
                 right = self._latest_packets["R"]
                 raw["flex"]["R"] = self._safe_flex(right)
                 raw["fsr_pressed"]["R"] = self._safe_fsr(right)
-                right_imu = self._safe_right_imu(right)
-                if right_imu is not None:
-                    raw["imu"]["R"] = right_imu
             self._last_glove_ids = [gid for gid in ("L", "R") if self._is_fresh(gid, now_ms)]
         else:
             # The left glove owns posture, deadman, and active control IMU. If it

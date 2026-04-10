@@ -287,22 +287,6 @@ class HermesGateway:
         }
 
     @staticmethod
-    def _safe_right_imu(pkt: Dict[str, Any]) -> Optional[Dict[str, float]]:
-        imu = pkt.get("imu", {})
-        if not isinstance(imu, dict):
-            return None
-        if not any(key in imu for key in ("PITCH", "ROLL", "YAW", "AX", "AY", "AZ", "X", "Y", "Z")):
-            return None
-        return {
-            "PITCH": float(imu.get("PITCH", 0.0)),
-            "ROLL": float(imu.get("ROLL", 0.0)),
-            "YAW": float(imu.get("YAW", 0.0)),
-            "AX": float(imu.get("AX", imu.get("X", 0.0))),
-            "AY": float(imu.get("AY", imu.get("Y", 0.0))),
-            "AZ": float(imu.get("AZ", imu.get("Z", 0.0))),
-        }
-
-    @staticmethod
     def _safe_left_imu(pkt: Dict[str, Any]) -> Dict[str, float]:
         imu = pkt.get("imu", {})
         return {
@@ -315,36 +299,34 @@ class HermesGateway:
         }
 
     def _build_raw(self) -> Optional[Dict[str, Any]]:
-        if not self._is_fresh(self.left_latest) or not self._is_fresh(self.right_latest):
-            # Deadman failsafe if a glove stream is stale.
+        if not self._is_fresh(self.left_latest):
+            # Deadman failsafe if the left glove stream is stale. The right glove
+            # only carries FSR commands and should not kill motion on its own.
             self.gesture_state.deadman_active = False
             return None
 
         assert self.left_latest is not None
-        assert self.right_latest is not None
-
         left = self.left_latest.packet
-        right = self.right_latest.packet
-
-        imu_payload = {
-            "L": self._safe_left_imu(left),
-        }
-        right_imu = self._safe_right_imu(right)
-        if right_imu is not None:
-            imu_payload["R"] = right_imu
 
         raw = {
             "time_ms": int(time.time() * 1000),
             "flex": {
                 "L": self._safe_flex(left),
-                "R": self._safe_flex(right),
             },
             "fsr_pressed": {
                 "L": self._safe_fsr(left),
-                "R": self._safe_fsr(right),
             },
-            "imu": imu_payload,
+            "imu": {
+                "L": self._safe_left_imu(left),
+            },
         }
+
+        if self._is_fresh(self.right_latest):
+            assert self.right_latest is not None
+            right = self.right_latest.packet
+            raw["flex"]["R"] = self._safe_flex(right)
+            raw["fsr_pressed"]["R"] = self._safe_fsr(right)
+
         return raw
 
     def _run_pipeline(self, raw: Dict[str, Any]) -> None:

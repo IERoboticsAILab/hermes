@@ -131,8 +131,7 @@ These are the current code assumptions, not future plans:
 - left glove supplies flex posture sensing
 - left glove supplies the deadman IMU
 - left glove shake triggers `ESTOP`
-- the active control IMU is taken from `imu.R` if present, otherwise `imu.L`
-- the current right-glove firmware does **not** send IMU, so the left glove is the active control IMU in practice
+- the active control IMU comes from `imu.L`
 - the current right-glove firmware sends FSR data only
 - the current vest serial bridge requires **both gloves** to be fresh before publishing a usable `/hermes/raw_input`
 - if either glove goes stale, the bridge publishes an empty raw sample so the gesture pipeline fails safe with deadman off

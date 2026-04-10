@@ -21,7 +21,6 @@ class GestureEvent:
     fsr_sequence: Optional[List[FsrEvent]] = None
     imu_R: Optional[Dict[str, float]] = None  # active control IMU {"PITCH":..., "ROLL":..., "YAW":...}
     accel_L: Optional[Dict[str, float]] = None  # {"AX":..., "AY":..., "AZ":...}
-    accel_R: Optional[Dict[str, float]] = None  # {"AX":..., "AY":..., "AZ":...}
     hold_ms: int = 0
 
 
