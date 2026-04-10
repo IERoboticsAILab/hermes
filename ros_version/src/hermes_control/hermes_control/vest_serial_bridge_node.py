@@ -244,23 +244,26 @@ class VestSerialBridgeNode(Node):
         left_fresh = self._is_fresh("L", now_ms)
         right_fresh = self._is_fresh("R", now_ms)
 
-        if left_fresh and right_fresh:
+        if left_fresh:
             left = self._latest_packets["L"]
-            right = self._latest_packets["R"]
-            imu_payload = {"L": self._safe_left_imu(left)}
-            right_imu = self._safe_right_imu(right)
-            if right_imu is not None:
-                imu_payload["R"] = right_imu
             raw = {
                 "time_ms": now_ms,
-                "flex": {"L": self._safe_flex(left), "R": self._safe_flex(right)},
-                "fsr_pressed": {"L": self._safe_fsr(left), "R": self._safe_fsr(right)},
-                "imu": imu_payload,
+                "flex": {"L": self._safe_flex(left)},
+                "fsr_pressed": {"L": self._safe_fsr(left)},
+                "imu": {"L": self._safe_left_imu(left)},
             }
-            self._last_glove_ids = ["L", "R"]
+            if right_fresh:
+                right = self._latest_packets["R"]
+                raw["flex"]["R"] = self._safe_flex(right)
+                raw["fsr_pressed"]["R"] = self._safe_fsr(right)
+                right_imu = self._safe_right_imu(right)
+                if right_imu is not None:
+                    raw["imu"]["R"] = right_imu
+            self._last_glove_ids = [gid for gid in ("L", "R") if self._is_fresh(gid, now_ms)]
         else:
-            # Force the gesture pipeline into a fail-safe deadman-off tick when glove
-            # traffic goes stale, matching the old single-process gateway behavior.
+            # The left glove owns posture, deadman, and active control IMU. If it
+            # goes stale, force the gesture pipeline into a fail-safe deadman-off
+            # tick. A stale right glove should only remove right-hand commands.
             raw = {
                 "time_ms": now_ms,
                 "flex": {},
