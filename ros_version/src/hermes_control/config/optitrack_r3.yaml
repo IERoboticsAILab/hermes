@@ -8,4 +8,4 @@ optitrack_pose_beacon_node:
     planar_y_axis: z
     forward_axis: x
     robot_id: r3
-    rigid_body_name: umh_4_green
+    rigid_body_name: umh_0
