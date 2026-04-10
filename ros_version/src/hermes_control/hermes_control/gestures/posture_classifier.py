@@ -7,8 +7,8 @@ from typing import Dict, Optional
 class PostureCalibration:
     # Current glove calibration treats values below ~0.9 as extended.
     # Values at/above ~0.9 are treated as curled.
-    ext_max: float = 0.90
-    curl_min: float = 0.90
+    ext_max: float = 0.80
+    curl_min: float = 0.80
 
     # Keep hysteresis off by default for this near-single-threshold calibration.
     hysteresis: float = 0.0
