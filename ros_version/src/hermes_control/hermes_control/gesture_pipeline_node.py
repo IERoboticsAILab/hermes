@@ -19,10 +19,12 @@ class GesturePipelineNode(Node):
         self.declare_parameter("raw_topic", "/hermes/raw_input")
         self.declare_parameter("packet_topic", "/hermes/command_packets")
         self.declare_parameter("gesture_state_topic", "/hermes/gesture_state")
+        self.declare_parameter("deadman_always_true", False)
 
         raw_topic = str(self.get_parameter("raw_topic").value)
         packet_topic = str(self.get_parameter("packet_topic").value)
         state_topic = str(self.get_parameter("gesture_state_topic").value)
+        self._deadman_always_true = bool(self.get_parameter("deadman_always_true").value)
 
         self._state = GestureState()
         self._recognizer = GestureRecognizer()
@@ -33,7 +35,9 @@ class GesturePipelineNode(Node):
         self._raw_sub = self.create_subscription(String, raw_topic, self._on_raw, 50)
 
         self.get_logger().info(
-            f"Gesture pipeline ready. raw_topic={raw_topic}, packet_topic={packet_topic}, state_topic={state_topic}"
+            "Gesture pipeline ready. "
+            f"raw_topic={raw_topic}, packet_topic={packet_topic}, state_topic={state_topic}, "
+            f"deadman_always_true={self._deadman_always_true}"
         )
 
     def _decode_raw(self, data: str) -> Optional[Dict[str, Any]]:
@@ -75,7 +79,13 @@ class GesturePipelineNode(Node):
         event = self._recognizer.recognize(raw)
         now_ms = int(raw["time_ms"])
 
-        safety_packet = self._safety.tick(event, self._state, COMMAND_REGISTRY, now_ms)
+        safety_packet = self._safety.tick(
+            event,
+            self._state,
+            COMMAND_REGISTRY,
+            now_ms,
+            force_deadman_true=self._deadman_always_true,
+        )
         if safety_packet:
             self._publish_packet(safety_packet)
 

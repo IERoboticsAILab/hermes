@@ -43,6 +43,7 @@ class SafetyEvaluator:
         state: GestureState,
         registry: Dict[str, Any],
         now_ms: int,
+        force_deadman_true: bool = False,
     ) -> Optional[Dict[str, Any]]:
         safety_cmds = registry["commands"]["safety"]
 
@@ -53,6 +54,11 @@ class SafetyEvaluator:
         cmd = safety_cmds.get("DEADMAN_IMU")
         if not cmd:
             return None
+
+        if force_deadman_true:
+            self.deadman_latch.palm_up_since_ms = None
+            self.deadman_latch.palm_down_since_ms = None
+            return self._set_gate(True, cmd, state, resolved_source="override.deadman_always_true")
 
         spec = cmd.get("gesture", {}).get("L_accel_palm_up")
         if spec is None:
@@ -161,6 +167,7 @@ class SafetyEvaluator:
         gate_motion: bool,
         cmd: Dict[str, Any],
         state: GestureState,
+        resolved_source: str = "L_accel_palm_up",
     ) -> Optional[Dict[str, Any]]:
         if self.deadman_latch.last_gate is not None and self.deadman_latch.last_gate == gate_motion:
             state.deadman_active = gate_motion
@@ -174,5 +181,5 @@ class SafetyEvaluator:
             "command_key": "DEADMAN_IMU",
             "command_id": cmd["id"],
             "effect": {"type": "gate_motion", "value": gate_motion},
-            "resolved": {"source": "L_accel_palm_up"},
+            "resolved": {"source": resolved_source},
         }

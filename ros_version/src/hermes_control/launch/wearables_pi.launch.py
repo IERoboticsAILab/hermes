@@ -17,6 +17,7 @@ def generate_launch_description() -> LaunchDescription:
     )
     serial_port_arg = DeclareLaunchArgument("serial_port", default_value="/dev/ttyUSB0")
     baud_rate_arg = DeclareLaunchArgument("baud_rate", default_value="921600")
+    deadman_always_true_arg = DeclareLaunchArgument("deadman_always_true", default_value="false")
 
     bridge_node = Node(
         package="hermes_control",
@@ -37,6 +38,14 @@ def generate_launch_description() -> LaunchDescription:
         executable="gesture_pipeline_node",
         name="gesture_pipeline_node",
         output="screen",
+        parameters=[
+            {
+                "deadman_always_true": ParameterValue(
+                    LaunchConfiguration("deadman_always_true"),
+                    value_type=bool,
+                ),
+            },
+        ],
     )
 
     swarm_node = Node(
@@ -62,5 +71,15 @@ def generate_launch_description() -> LaunchDescription:
     )
 
     return LaunchDescription(
-        [bridge_config_arg, vest_config_arg, serial_port_arg, baud_rate_arg, bridge_node, gesture_node, swarm_node, haptic_node]
+        [
+            bridge_config_arg,
+            vest_config_arg,
+            serial_port_arg,
+            baud_rate_arg,
+            deadman_always_true_arg,
+            bridge_node,
+            gesture_node,
+            swarm_node,
+            haptic_node,
+        ]
     )
