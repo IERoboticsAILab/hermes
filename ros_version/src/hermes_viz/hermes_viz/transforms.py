@@ -118,3 +118,28 @@ def parse_raw_input(raw: str) -> Optional[FusedSample]:
                            left=left, right=right)
     except (json.JSONDecodeError, KeyError, ValueError, TypeError):
         return None
+
+
+@dataclass(frozen=True)
+class RobotPose:
+    robot_id: str
+    x: float
+    y: float
+    yaw: float
+    stamp_ms: int
+
+
+def parse_robot_state_beacon(raw: str) -> Optional[RobotPose]:
+    try:
+        d = json.loads(raw)
+        if not isinstance(d, dict):
+            return None
+        return RobotPose(
+            robot_id=str(d["robot_id"]),
+            x=_f(d["x"]),
+            y=_f(d["y"]),
+            yaw=_f(d["yaw"]),
+            stamp_ms=int(d["stamp_ms"]),
+        )
+    except (json.JSONDecodeError, KeyError, ValueError, TypeError):
+        return None
