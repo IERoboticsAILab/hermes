@@ -4,3 +4,6 @@ draft_files/
 __pycache__/
 *.py[cod]
 .DS_Store
+
+# Brainstorming companion mockups (transient)
+.superpowers/
