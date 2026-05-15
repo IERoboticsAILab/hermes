@@ -7,6 +7,7 @@ imports minimal until then.
 
 from __future__ import annotations
 
+import time
 from typing import Protocol, runtime_checkable
 
 import rclpy
@@ -20,6 +21,34 @@ from hermes_viz.transforms import (
 from hermes_viz.scene.hands import euler_to_quat
 
 
+class DeadmanWatchdog:
+    """Live iff last observed deadman_active was True AND we saw a message
+    from /hermes/swarm_intent within `silence_timeout_s`.
+
+    Source: swarm_control_node._intent_snapshot publishes deadman_active.
+    A silent /hermes/swarm_intent means the swarm pipeline has stopped
+    publishing — treat as dead.
+    """
+
+    def __init__(self, silence_timeout_s: float):
+        if silence_timeout_s <= 0:
+            raise ValueError("silence_timeout_s must be > 0")
+        self._timeout = silence_timeout_s
+        self._last_value: bool = False
+        self._last_ts: float | None = None
+
+    def observe(self, deadman_active: bool, now_s: float) -> None:
+        self._last_value = bool(deadman_active)
+        self._last_ts = now_s
+
+    def is_live(self, now_s: float) -> bool:
+        if self._last_ts is None:
+            return False
+        if now_s - self._last_ts > self._timeout:
+            return False
+        return self._last_value
+
+
 @runtime_checkable
 class SceneSink(Protocol):
     """Contract the bridge expects from any scene-state consumer."""
@@ -29,6 +58,7 @@ class SceneSink(Protocol):
     def update_vest_motors(self, motors: tuple) -> None: ...
     def update_gesture(self, gesture: str, command_id: str) -> None: ...
     def update_intent(self, mode: str, deadman_active: bool, active_formation_type: str, stamp_ms: int) -> None: ...
+    def set_deadman(self, live: bool) -> None: ...
     def push_hud(self) -> None: ...
 
 
@@ -45,6 +75,21 @@ class VizBridgeNode(Node):
         self.create_subscription(String, "/hermes/swarm_intent", self._on_swarm_intent, qos)
         self.create_subscription(String, "/hermes/command_packets", self._on_command, qos)
         self.create_subscription(String, "/hermes/vest_serial_tx", self._on_vest, qos)
+
+        # Deadman watchdog and HUD timer (4 Hz).
+        self._deadman = DeadmanWatchdog(silence_timeout_s=0.5)
+        self._monotonic = time.monotonic
+        self._hud_timer = self.create_timer(0.25, self._tick_hud)
+
+    def is_deadman_live(self) -> bool:
+        """Snapshot of the deadman watchdog. Callable from any thread."""
+        return self._deadman.is_live(now_s=self._monotonic())
+
+    def _tick_hud(self) -> None:
+        """4 Hz timer. Pushes deadman live-state to the sink, then asks
+        the sink to render the HUD."""
+        self._sink.set_deadman(self.is_deadman_live())
+        self._sink.push_hud()
 
     def _on_raw_input(self, msg: String) -> None:
         s = parse_raw_input(msg.data)
@@ -92,6 +137,7 @@ class VizBridgeNode(Node):
     def _on_swarm_intent(self, msg: String) -> None:
         intent = parse_swarm_intent(msg.data)
         if intent is not None:
+            self._deadman.observe(intent.deadman_active, now_s=self._monotonic())
             self._sink.update_intent(
                 mode=intent.mode,
                 deadman_active=intent.deadman_active,
@@ -112,9 +158,53 @@ class VizBridgeNode(Node):
 
 
 def main(args=None):
-    """Placeholder. Task 17 replaces this with the Vuer-aware main()."""
-    raise SystemExit("viz_bridge_node.main() is wired by Task 17 (Vuer integration). "
-                     "Run via `ros2 launch hermes_viz viz.launch.py` once Task 18 lands.")
+    """Spawn Vuer + the bridge node in the same process."""
+    import asyncio
+    import threading
+    from pathlib import Path
+
+    from vuer import Vuer
+    from hermes_viz.vuer_sink import VuerSink
+
+    rclpy.init(args=args)
+
+    # The Vuer server serves the staged URDF + meshes from this directory.
+    assets_dir = Path(__file__).resolve().parent / "assets" / "rosbot_urdf"
+
+    # Read launch parameters via a transient node (params haven't been
+    # declared on the bridge node yet — keep it simple for MVP).
+    host = "localhost"
+    port = 8012
+
+    app = Vuer(host=host, port=port, static_root=str(assets_dir))
+
+    lab_dims = {"room_w": 6.0, "room_d": 4.0, "room_h": 2.7,
+                "optitrack_w": 4.0, "optitrack_d": 3.0}
+    robot_ids = ["r1", "r2", "r3", "r4"]
+
+    @app.spawn(start=False)
+    async def boot(sess):
+        sink = VuerSink(
+            session=sess,
+            lab_dims=lab_dims,
+            robot_ids=robot_ids,
+            urdf_src="/static/rosbot.urdf",
+        )
+        node = VizBridgeNode(scene_sink=sink)
+
+        def _spin():
+            try:
+                rclpy.spin(node)
+            finally:
+                node.destroy_node()
+                rclpy.shutdown()
+        threading.Thread(target=_spin, daemon=True).start()
+
+        # Keep the session alive forever (Vuer event loop owns the foreground).
+        while True:
+            await asyncio.sleep(1.0)
+
+    app.run()
 
 
 if __name__ == "__main__":
