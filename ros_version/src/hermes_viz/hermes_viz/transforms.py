@@ -143,3 +143,68 @@ def parse_robot_state_beacon(raw: str) -> Optional[RobotPose]:
         )
     except (json.JSONDecodeError, KeyError, ValueError, TypeError):
         return None
+
+
+@dataclass(frozen=True)
+class VestMotors:
+    seq: int
+    levels: tuple[int, int, int, int, int, int]
+
+
+@dataclass(frozen=True)
+class SwarmIntent:
+    mode: str
+    deadman_active: bool
+    active_formation_type: str
+    stamp_ms: int
+
+
+@dataclass(frozen=True)
+class CommandPacket:
+    domain: str
+    command_id: str
+    command_key: str
+
+
+def parse_vest_motors(raw: str) -> Optional[VestMotors]:
+    parts = raw.strip().split(",")
+    if len(parts) != 8 or parts[0] != "V1":
+        return None
+    try:
+        seq = int(parts[1])
+        levels = tuple(int(p) for p in parts[2:8])
+        return VestMotors(seq=seq, levels=levels)  # type: ignore[arg-type]
+    except (ValueError, TypeError):
+        return None
+
+
+def parse_swarm_intent(raw: str) -> Optional[SwarmIntent]:
+    try:
+        d = json.loads(raw)
+        if not isinstance(d, dict):
+            return None
+        return SwarmIntent(
+            mode=str(d["mode"]),
+            deadman_active=bool(d["deadman_active"]),
+            active_formation_type=str(d.get("active_formation_type", "")),
+            stamp_ms=int(d["stamp_ms"]),
+        )
+    except (json.JSONDecodeError, KeyError, ValueError, TypeError):
+        return None
+
+
+def parse_command_packet(raw: str) -> Optional[CommandPacket]:
+    try:
+        d = json.loads(raw)
+        if not isinstance(d, dict):
+            return None
+        cmd_id = d["command_id"]
+        if not isinstance(cmd_id, str):
+            return None
+        return CommandPacket(
+            domain=str(d.get("domain", "")),
+            command_id=cmd_id,
+            command_key=str(d.get("command_key", "")),
+        )
+    except (json.JSONDecodeError, KeyError, ValueError, TypeError):
+        return None
