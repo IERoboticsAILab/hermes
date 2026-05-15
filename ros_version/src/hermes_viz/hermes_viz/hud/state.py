@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from collections import deque
 from typing import Optional
 
@@ -44,3 +45,36 @@ class LatencyWindow:
 
     def p95(self, now_s: Optional[float] = None) -> Optional[float]:
         return self._percentile(95.0, now_s)
+
+
+class PacketRateMeter:
+    """Estimates packets/s using a single-pole exponential moving average.
+
+    On each `tick(now_s)`, the instantaneous rate (1 / dt) is mixed into the
+    running estimate with weight `1 - exp(-dt / tau)`. When read with
+    `rate_hz(now_s)`, the estimate decays by `exp(-idle / tau)` to reflect
+    silence since the last tick.
+    """
+
+    def __init__(self, time_constant_s: float):
+        if time_constant_s <= 0:
+            raise ValueError("time_constant_s must be > 0")
+        self._tau = time_constant_s
+        self._last_tick_s: Optional[float] = None
+        self._rate: float = 0.0
+
+    def tick(self, now_s: float) -> None:
+        if self._last_tick_s is None:
+            self._last_tick_s = now_s
+            return
+        dt = max(1e-6, now_s - self._last_tick_s)
+        instant = 1.0 / dt
+        alpha = 1.0 - math.exp(-dt / self._tau)
+        self._rate = self._rate + alpha * (instant - self._rate)
+        self._last_tick_s = now_s
+
+    def rate_hz(self, now_s: float) -> float:
+        if self._last_tick_s is None:
+            return 0.0
+        idle = max(0.0, now_s - self._last_tick_s)
+        return self._rate * math.exp(-idle / self._tau)
