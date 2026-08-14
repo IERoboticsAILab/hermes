@@ -1,0 +1,3 @@
+[submodule "rosbot_urdf_bundle/husarion_components_description"]
+	path = rosbot_urdf_bundle/husarion_components_description
+	url = https://github.com/husarion/husarion_components_description.git

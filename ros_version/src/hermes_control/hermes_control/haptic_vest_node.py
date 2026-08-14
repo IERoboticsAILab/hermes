@@ -177,6 +177,14 @@ class HapticVestNode(Node):
         self.declare_parameter("dense_ratio_threshold", 0.80)
         self.declare_parameter("sparse_ratio_threshold", 1.25)
         self.declare_parameter("default_target_spacing_m", 1.00)
+        # Movement-pulse: replaces the old continuous dense/sparse vibration.
+        # The vest now tracks per-robot positions as an array and fires a
+        # short pulse pattern only when the swarm-wide aggregate change
+        # crosses a threshold within a sampling window — so the operator
+        # feels "the swarm just moved" instead of being buzzed at all times.
+        self.declare_parameter("movement_pulse_threshold_m", 0.20)
+        self.declare_parameter("movement_pulse_window_ms", 700)
+        self.declare_parameter("movement_sample_period_ms", 200)
 
         serial_port = str(self.get_parameter("serial_port").value)
         baud_rate = int(self.get_parameter("baud_rate").value)
@@ -222,6 +230,15 @@ class HapticVestNode(Node):
         self._default_target_spacing_m = max(
             0.1, _as_float(self.get_parameter("default_target_spacing_m").value, 1.00)
         )
+        self._movement_pulse_threshold_m = max(
+            0.01, _as_float(self.get_parameter("movement_pulse_threshold_m").value, 0.20)
+        )
+        self._movement_pulse_window_ms = max(
+            100, int(self.get_parameter("movement_pulse_window_ms").value)
+        )
+        self._movement_sample_period_ms = max(
+            50, int(self.get_parameter("movement_sample_period_ms").value)
+        )
 
         self._use_serial_output = use_serial_output
         self._serial_frame_topic = serial_frame_topic
@@ -255,6 +272,12 @@ class HapticVestNode(Node):
         self._formation_until_ms = 0
         self._tx_seq = 0
         self._last_debug_ns = 0
+        # Position-array snapshot used by _swarm_movement_check to detect
+        # when the swarm just moved enough to be worth a haptic pulse.
+        self._prev_positions: Dict[str, Tuple[float, float]] = {}
+        self._last_movement_sample_ns: int = 0
+        self._movement_pulse_until_ms: int = 0
+        self._last_movement_aggregate_m: float = 0.0
 
         self.get_logger().info(
             f"Haptic vest ready. output_mode={'serial' if self._use_serial_output else 'topic'}, "
@@ -482,10 +505,60 @@ class HapticVestNode(Node):
     def _sparse_on(self, now_ms: int) -> bool:
         return _windowed_pulse(now_ms, 1200, [(0, 220)])
 
+    def _swarm_movement_check(self, now_ns: int) -> None:
+        """Sample the position array at a fixed cadence; when the
+        aggregate per-bot displacement since the last sample exceeds the
+        configured threshold, latch a movement-pulse window. Bots whose
+        beacons are stale are ignored so a dropout doesn't masquerade as
+        motion."""
+        period_ns = self._movement_sample_period_ms * 1_000_000
+        if (now_ns - self._last_movement_sample_ns) < period_ns:
+            return
+        self._last_movement_sample_ns = now_ns
+        aggregate = 0.0
+        new_positions: Dict[str, Tuple[float, float]] = {}
+        for rid in self._motor_robot_ids:
+            state = self._robot_states.get(rid)
+            rx_ns = self._robot_state_rx_ns.get(rid, 0)
+            if state is None or self._is_stale(rx_ns, self._state_timeout_ms):
+                continue
+            x = float(state.get("x", 0.0))
+            y = float(state.get("y", 0.0))
+            new_positions[rid] = (x, y)
+            prev = self._prev_positions.get(rid)
+            if prev is not None:
+                aggregate += math.hypot(x - prev[0], y - prev[1])
+        self._prev_positions = new_positions
+        self._last_movement_aggregate_m = aggregate
+        if aggregate >= self._movement_pulse_threshold_m:
+            now_ms = int(now_ns / 1_000_000)
+            # Extend the pulse window instead of replacing — keeps the
+            # feedback continuous while the swarm is actively moving,
+            # then naturally decays to silence once motion stops.
+            self._movement_pulse_until_ms = max(
+                self._movement_pulse_until_ms,
+                now_ms + self._movement_pulse_window_ms,
+            )
+
+    def _movement_pulse_on(self, now_ms: int) -> bool:
+        """Two short pulses inside the latched window: distinguishable
+        from the gesture/formation ack rhythms so the operator can tell
+        the kinds of haptic events apart."""
+        if now_ms >= self._movement_pulse_until_ms:
+            return False
+        elapsed = self._movement_pulse_window_ms - (
+            self._movement_pulse_until_ms - now_ms
+        )
+        return elapsed < 110 or (260 <= elapsed < 370)
+
     def _tick(self) -> None:
         now_ns = self._now_ns()
         now_ms = int(now_ns / 1_000_000)
+        # Density mode is still computed for the debug topic but no longer
+        # drives motors directly — the swarm-wide buzz it used to produce
+        # has been replaced by the threshold-triggered movement pulse below.
         density_mode, density_robot_ids, density_ratio = self._density_mode()
+        self._swarm_movement_check(now_ns)
         formation_reached_now, formation_robot_ids = self._formation_reached_now()
         if formation_reached_now and not self._formation_reached_latched:
             self._formation_until_ms = now_ms + self._formation_feedback_ms
@@ -525,12 +598,12 @@ class HapticVestNode(Node):
             elif self._gesture_on(now_ms):
                 event = "gesture_ok"
                 is_on = True
-            elif density_mode == "dense" and rid in density_robot_ids:
-                event = "swarm_dense"
-                is_on = self._dense_on(now_ms)
-            elif density_mode == "sparse" and rid in density_robot_ids:
-                event = "swarm_sparse"
-                is_on = self._sparse_on(now_ms)
+            elif self._movement_pulse_on(now_ms):
+                # Single threshold-triggered pulse fires on every motor at
+                # once so the operator feels a swarm-wide "they're moving"
+                # event rather than the prior per-bot continuous buzz.
+                event = "swarm_movement"
+                is_on = True
 
             levels.append(255 if is_on else 0)
             debug_motors.append(
@@ -563,6 +636,8 @@ class HapticVestNode(Node):
                 "formation_reached": formation_reached_now,
                 "density_mode": density_mode,
                 "density_ratio": density_ratio,
+                "movement_aggregate_m": self._last_movement_aggregate_m,
+                "movement_pulse_active": now_ms < self._movement_pulse_until_ms,
                 "motors": debug_motors,
                 "serial_frame": frame.strip(),
             }

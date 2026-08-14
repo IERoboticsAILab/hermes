@@ -53,6 +53,10 @@ def generate_launch_description() -> LaunchDescription:
         executable="swarm_control_node",
         name="swarm_control_node",
         output="screen",
+        # 30 Hz instead of the 10 Hz default — used to be the dominant
+        # ~100 ms latency hop between a fresh command packet and
+        # /hermes/swarm_intent landing at downstream consumers.
+        parameters=[{"intent_hz": 30.0}],
     )
 
     haptic_node = Node(

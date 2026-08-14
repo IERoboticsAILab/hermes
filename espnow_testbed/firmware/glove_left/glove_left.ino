@@ -22,6 +22,7 @@ static const char* GLOVE_ID = "L";
 static const uint8_t ESPNOW_CHANNEL = 1;
 static const uint32_t SEND_INTERVAL_MS = 20;  // 50 Hz
 static const bool SERIAL_DEBUG_TX = true;
+static const bool SERIAL_DEBUG_IMU = true;
 static const uint32_t SERIAL_DEBUG_INTERVAL_MS = 250;
 
 // Update these pins to match your wiring.
@@ -33,7 +34,7 @@ static const int FLEX_PINKY_PIN = 34;
 // MPU6050 IMU (I2C). Adjust pins/address only if your wiring differs.
 static const int IMU_SDA_PIN = 21;
 static const int IMU_SCL_PIN = 22;
-static const uint32_t IMU_I2C_HZ = 400000;
+static const uint32_t IMU_I2C_HZ = 100000;
 static const float IMU_ACCEL_LSB_PER_G = 16384.0f;   // +/-2g
 static const float IMU_GYRO_LSB_PER_DPS = 131.0f;    // +/-250 dps
 static const float IMU_COMP_ALPHA = 0.98f;           // Complementary filter blend
@@ -68,6 +69,40 @@ float normalizeFlex(int raw) {
 bool imuProbe(uint8_t addr) {
   Wire.beginTransmission(addr);
   return Wire.endTransmission(true) == 0;
+}
+
+bool imuReadReg8(uint8_t reg, uint8_t& value) {
+  return imuReadRegs(reg, &value, 1);
+}
+
+void imuScanBus() {
+  if (!SERIAL_DEBUG_IMU) return;
+
+  Serial.printf("[LEFT][IMU] Scanning I2C bus on SDA=%d SCL=%d @ %lu Hz\n",
+                IMU_SDA_PIN, IMU_SCL_PIN, (unsigned long)IMU_I2C_HZ);
+  uint8_t found = 0;
+  for (uint8_t addr = 1; addr < 127; ++addr) {
+    Wire.beginTransmission(addr);
+    uint8_t err = Wire.endTransmission(true);
+    if (err == 0) {
+      ++found;
+      Serial.printf("[LEFT][IMU] Found device at 0x%02X\n", addr);
+    }
+  }
+  if (found == 0) {
+    Serial.println("[LEFT][IMU] No I2C devices responded");
+  }
+}
+
+void imuPrintWhoAmI() {
+  if (!SERIAL_DEBUG_IMU) return;
+
+  uint8_t who = 0;
+  if (imuReadReg8(0x75, who)) {
+    Serial.printf("[LEFT][IMU] WHO_AM_I at 0x%02X = 0x%02X\n", imu_addr, who);
+  } else {
+    Serial.printf("[LEFT][IMU] Failed to read WHO_AM_I from 0x%02X\n", imu_addr);
+  }
 }
 
 bool imuWriteReg(uint8_t reg, uint8_t value) {
@@ -111,6 +146,10 @@ bool imuReadRaw(int16_t& ax, int16_t& ay, int16_t& az, int16_t& gx, int16_t& gy,
 }
 
 bool initImu() {
+  if (SERIAL_DEBUG_IMU) {
+    Serial.printf("[LEFT][IMU] Initializing on SDA=%d SCL=%d @ %lu Hz\n",
+                  IMU_SDA_PIN, IMU_SCL_PIN, (unsigned long)IMU_I2C_HZ);
+  }
   Wire.begin(IMU_SDA_PIN, IMU_SCL_PIN, IMU_I2C_HZ);
   delay(20);
 
@@ -119,16 +158,40 @@ bool initImu() {
   } else if (imuProbe(0x69)) {
     imu_addr = 0x69;
   } else {
+    if (SERIAL_DEBUG_IMU) {
+      Serial.println("[LEFT][IMU] No response at 0x68 or 0x69");
+      imuScanBus();
+    }
     return false;
   }
 
+  if (SERIAL_DEBUG_IMU) {
+    Serial.printf("[LEFT][IMU] Probe succeeded at 0x%02X\n", imu_addr);
+  }
+  imuPrintWhoAmI();
+
   // Wake MPU6050 and set ranges/filter.
-  if (!imuWriteReg(0x6B, 0x00)) return false;  // PWR_MGMT_1
+  if (!imuWriteReg(0x6B, 0x00)) {
+    if (SERIAL_DEBUG_IMU) Serial.println("[LEFT][IMU] Failed to write PWR_MGMT_1");
+    return false;
+  }  // PWR_MGMT_1
   delay(50);
-  if (!imuWriteReg(0x1A, 0x03)) return false;  // DLPF_CFG
-  if (!imuWriteReg(0x1B, 0x00)) return false;  // GYRO_CONFIG +/-250 dps
-  if (!imuWriteReg(0x1C, 0x00)) return false;  // ACCEL_CONFIG +/-2g
-  if (!imuWriteReg(0x19, 0x04)) return false;  // SMPLRT_DIV
+  if (!imuWriteReg(0x1A, 0x03)) {
+    if (SERIAL_DEBUG_IMU) Serial.println("[LEFT][IMU] Failed to write DLPF_CFG");
+    return false;
+  }  // DLPF_CFG
+  if (!imuWriteReg(0x1B, 0x00)) {
+    if (SERIAL_DEBUG_IMU) Serial.println("[LEFT][IMU] Failed to write GYRO_CONFIG");
+    return false;
+  }  // GYRO_CONFIG +/-250 dps
+  if (!imuWriteReg(0x1C, 0x00)) {
+    if (SERIAL_DEBUG_IMU) Serial.println("[LEFT][IMU] Failed to write ACCEL_CONFIG");
+    return false;
+  }  // ACCEL_CONFIG +/-2g
+  if (!imuWriteReg(0x19, 0x04)) {
+    if (SERIAL_DEBUG_IMU) Serial.println("[LEFT][IMU] Failed to write SMPLRT_DIV");
+    return false;
+  }  // SMPLRT_DIV
 
   float sum_gx = 0.0f;
   float sum_gy = 0.0f;
@@ -137,6 +200,7 @@ bool initImu() {
 
   for (uint16_t i = 0; i < IMU_CALIBRATION_SAMPLES; ++i) {
     if (!imuReadRaw(ax, ay, az, gx, gy, gz)) {
+      if (SERIAL_DEBUG_IMU) Serial.println("[LEFT][IMU] Failed during calibration reads");
       return false;
     }
     sum_gx += ((float)gx) / IMU_GYRO_LSB_PER_DPS;
@@ -150,6 +214,7 @@ bool initImu() {
   gyro_bias_z_dps = sum_gz / (float)IMU_CALIBRATION_SAMPLES;
 
   if (!imuReadRaw(ax, ay, az, gx, gy, gz)) {
+    if (SERIAL_DEBUG_IMU) Serial.println("[LEFT][IMU] Failed first post-calibration sample");
     return false;
   }
 
@@ -164,6 +229,10 @@ bool initImu() {
   fused_yaw_rad = 0.0f;
   imu_last_us = micros();
   imu_ready = true;
+  if (SERIAL_DEBUG_IMU) {
+    Serial.printf("[LEFT][IMU] Ready: bias_dps=(%.3f, %.3f, %.3f) accel_g=(%.3f, %.3f, %.3f)\n",
+                  gyro_bias_x_dps, gyro_bias_y_dps, gyro_bias_z_dps, ax_g, ay_g, az_g);
+  }
   return true;
 }
 

@@ -7,3 +7,19 @@ __pycache__/
 
 # Brainstorming companion mockups (transient)
 .superpowers/
+
+# Local agent config / worktrees
+.claude/
+
+# Arduino compile output
+espnow_testbed/firmware/*/build/
+ros_version/firmware/*/build/
+
+# Reference papers, reports, raw captures — not source
+*.pdf
+*.docx
+*.xlsx
+*.mov
+*.MOV
+/*.png
+/results.txt

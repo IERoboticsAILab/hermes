@@ -1,0 +1,3674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>H.E.R.M.E.S — Presentation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #080d1a;
+  --bg2:      #0d1428;
+  --blue:     #4FA3D9;
+  --blue-dim: rgba(79,163,217,0.12);
+  --blue-glow:0 0 6px rgba(79,163,217,0.22);
+  --white:    #ffffff;
+  --muted:    #7a8599;
+  --dim:      #c8d3e8;
+  --border:   rgba(79,163,217,0.22);
+  --card:     rgba(255,255,255,0.04);
+  --warn:     #C75353;
+  --good:     #5BB87A;
+  --gold:     #D4A85C;
+  --font:     'Inter', system-ui, sans-serif;
+  --mono:     'JetBrains Mono', 'Courier New', monospace;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  background: var(--bg);
+  color: var(--white);
+  font-family: var(--font);
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── GLOBAL ZOOM (for big TV screens / projectors) ── */
+:root { --zoom: 1; }
+#scale-stage {
+  position: fixed; top: 0; left: 0;
+  width: calc(100vw / var(--zoom));
+  height: calc(100vh / var(--zoom));
+  transform: scale(var(--zoom));
+  transform-origin: top left;
+  overflow: hidden;
+}
+#zoom-indicator {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 18px 30px;
+  background: rgba(8,13,26,0.92);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: var(--mono); font-size: 22px;
+  color: var(--blue);
+  letter-spacing: .14em; text-transform: uppercase;
+  z-index: 500;
+  opacity: 0; pointer-events: none;
+  transition: opacity .25s ease;
+  box-shadow: var(--blue-glow);
+}
+#zoom-indicator.show { opacity: 1; }
+
+/* ── CHROME ── */
+#progress {
+  position: fixed; bottom: 0; left: 0;
+  height: 3px; background: var(--blue);
+  box-shadow: var(--blue-glow);
+  transition: width .4s ease; z-index: 200;
+}
+#counter {
+  position: fixed; bottom: 14px; right: 22px;
+  font-family: var(--mono); font-size: 12px; color: var(--muted); z-index: 200;
+}
+#hint {
+  position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
+  font-family: var(--mono); font-size: 11px;
+  color: rgba(122,133,153,.45); z-index: 200; white-space: nowrap;
+}
+
+/* ── NOTES PANEL ── */
+#notes-panel {
+  position: fixed; top: 0; right: -440px;
+  width: 420px; height: 100%;
+  background: #060b18;
+  border-left: 1px solid var(--border);
+  z-index: 300; transition: right .3s ease;
+  display: flex; flex-direction: column;
+}
+#notes-panel.open { right: 0; }
+#notes-head {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--mono); font-size: 11px; color: var(--blue);
+  text-transform: uppercase; letter-spacing: .12em;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-shrink: 0;
+}
+#notes-close { cursor: pointer; color: var(--muted); font-size: 18px; line-height: 1; }
+#notes-close:hover { color: var(--white); }
+#notes-body {
+  padding: 24px 22px; font-size: 14px; line-height: 1.75;
+  color: #b8c4d8; overflow-y: auto; flex: 1;
+}
+#notes-body p + p { margin-top: 14px; }
+#notes-body strong { color: var(--blue); }
+
+/* ── SLIDES ── */
+#deck { width: 100%; height: 100%; position: relative; }
+
+.slide {
+  position: absolute; inset: 0;
+  display: none; flex-direction: column;
+  padding: 36px 64px 48px;
+  justify-content: center;
+  overflow: hidden;
+}
+.slide.active { display: flex; }
+
+/* helpers */
+.label {
+  font-family: var(--font);
+  font-size: clamp(38px, 6.0vw, 102px);
+  font-weight: 800;
+  color: var(--blue);
+  letter-spacing: -.02em;
+  line-height: 1;
+  margin-bottom: 10px;
+  text-transform: none;
+}
+/* title-slide tag + appendix badge keep the small mono treatment */
+.s-title .label,
+.app-badge {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--blue);
+  text-transform: uppercase;
+  letter-spacing: .16em;
+  margin-bottom: 18px;
+  line-height: 1.4;
+}
+h2 {
+  font-size: clamp(18px, 2.62vw, 45px);
+  font-weight: 500;
+  color: var(--dim);
+  line-height: 1.25;
+  letter-spacing: -.005em;
+  margin-bottom: 24px;
+}
+h2 em { color: var(--white); font-style: normal; font-weight: 700; }
+h3 {
+  font-size: clamp(16px, 2.12vw, 35px);
+}
+
+/* ── PROBLEM SLIDE — cognitive overload framing ── */
+.cog-banner {
+  background: var(--blue-dim);
+  border: 1px solid var(--blue);
+  border-radius: 12px;
+  padding: 16px 22px;
+  margin-bottom: 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px;
+}
+.cog-eq {
+  font-family: var(--mono);
+  font-size: clamp(14px, 1.88vw, 29px);
+  font-weight: 700;
+  color: var(--white);
+  letter-spacing: -.005em;
+  white-space: nowrap;
+}
+.cog-eq em { color: var(--blue); font-style: normal; }
+.cog-eq .op { color: var(--muted); padding: 0 6px; font-weight: 400; }
+.cog-bullets li strong { color: var(--white); }
+
+/* ── RESEARCH GAP SLIDE ── */
+/* ── RESEARCH GAP · Venn diagram (SVG) ── */
+.venn-chart {
+  width: 100%; display: flex; justify-content: center;
+  margin-top: 8px;
+}
+.venn-svg {
+  width: 100%; height: auto;
+  max-height: 82vh; display: block;
+}
+.venn-svg .venn-domain-prefix {
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 11px; letter-spacing: 3.2px; opacity: .7;
+}
+.venn-svg .venn-domain-prefix.dir1 { fill: #4FA3D9; }
+.venn-svg .venn-domain-prefix.dir2 { fill: #D4A85C; }
+.venn-svg .venn-domain {
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 17px; letter-spacing: 2.8px;
+}
+.venn-svg .venn-domain.dir1 { fill: #4FA3D9; }
+.venn-svg .venn-domain.dir2 { fill: #D4A85C; }
+.venn-svg .venn-anchor {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 22px; font-weight: 600; fill: #ffffff;
+}
+.venn-svg .venn-cite {
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 12px; fill: #D4A85C; letter-spacing: 1.4px;
+}
+.venn-svg .venn-hero-tag {
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 13px; fill: #D4A85C; letter-spacing: 2.4px;
+}
+.venn-svg .venn-hero-star {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 80px; fill: #D4A85C;
+  filter: drop-shadow(0 0 18px rgba(212,168,92,.7));
+}
+.venn-svg .venn-hero-name {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 38px; font-weight: 700; fill: #ffffff;
+  letter-spacing: -0.5px;
+}
+.venn-svg .venn-hero-sub {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 15px; fill: #D4A85C; font-style: italic;
+}
+
+/* ── PER-ANCHOR PAPER SLIDES ── */
+.paper-stack {
+  width: 100%;
+  display: flex; flex-direction: column; gap: 22px;
+  margin-top: 8px;
+}
+.paper-header {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.paper-header .cite-placeholder { margin: 0; }
+.paper-title-inline {
+  font-size: clamp(16px, 2.12vw, 32px);
+  color: var(--white); font-weight: 600; line-height: 1.3;
+  flex: 1; min-width: 200px;
+}
+.paper-direction {
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: .14em; text-transform: uppercase;
+  padding: 6px 12px; border-radius: 4px;
+  white-space: nowrap;
+}
+.paper-direction.dir1 {
+  color: var(--blue);
+  background: rgba(79,163,217,.08);
+  border: 1px solid rgba(79,163,217,.35);
+}
+.paper-direction.dir2 {
+  color: var(--gold);
+  background: rgba(212,168,92,.08);
+  border: 1px solid rgba(212,168,92,.35);
+}
+.paper-sections {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 22px;
+}
+.paper-section {
+  background: rgba(255,255,255,.02);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px 24px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.ps-tag {
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: .14em; text-transform: uppercase;
+  display: inline-block; align-self: flex-start;
+  padding: 5px 10px; border-radius: 4px;
+}
+.ps-tag.did     { color: var(--blue); background: rgba(79,163,217,.1);  border: 1px solid rgba(79,163,217,.3); }
+.ps-tag.matters { color: var(--good); background: rgba(91,184,122,.1);  border: 1px solid rgba(91,184,122,.3); }
+.ps-tag.limit   { color: var(--gold); background: rgba(212,168,92,.1);  border: 1px solid rgba(212,168,92,.3); }
+.ps-body {
+  font-size: clamp(13px, 1.75vw, 26px);
+  color: var(--dim); line-height: 1.6;
+}
+.ps-body strong { color: var(--white); font-weight: 600; }
+.paper-trail {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--muted); letter-spacing: .12em;
+  text-align: center; margin-top: 8px;
+}
+.paper-trail .pt-dot {
+  display: inline-block; width: 7px; height: 7px;
+  border-radius: 50%; margin: 0 4px;
+  background: rgba(255,255,255,.12);
+  vertical-align: middle;
+}
+.paper-trail .pt-dot.on { background: var(--blue); }
+.paper-trail .pt-dot.hero { background: var(--gold); }
+
+/* ── PRIOR WORK · 2x2 QUADRANT GRID ── */
+.prior-quad {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 22px;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  margin-top: 4px;
+}
+.pq-cell {
+  background: rgba(255,255,255,.025);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 22px 18px;
+  display: flex; flex-direction: column; gap: 10px;
+  position: relative; overflow: hidden;
+  min-height: 0;
+}
+.pq-cell.dir1 { border-color: rgba(79,163,217,.32); }
+.pq-cell.dir2 { border-color: rgba(212,168,92,.32); }
+.pq-cell::before {
+  content: ''; position: absolute;
+  top: 0; left: 0; right: 0; height: 3px;
+}
+.pq-cell.dir1::before { background: var(--blue); opacity: .8; }
+.pq-cell.dir2::before { background: var(--gold); opacity: .8; }
+.pq-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.pq-title-group { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.pq-cite {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--muted); letter-spacing: .12em;
+}
+.pq-title {
+  font-size: clamp(15px, 1.94vw, 32px);
+  font-weight: 700; color: var(--white);
+  line-height: 1.25;
+}
+.pq-dir {
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: .14em; text-transform: uppercase;
+  padding: 5px 10px; border-radius: 4px;
+  white-space: nowrap; align-self: flex-start;
+}
+.pq-dir.dir1 {
+  color: var(--blue);
+  background: rgba(79,163,217,.08);
+  border: 1px solid rgba(79,163,217,.35);
+}
+.pq-dir.dir2 {
+  color: var(--gold);
+  background: rgba(212,168,92,.08);
+  border: 1px solid rgba(212,168,92,.35);
+}
+.pq-body {
+  font-size: clamp(12px, 1.56vw, 24px);
+  color: var(--dim); line-height: 1.55;
+}
+.pq-body strong { color: var(--white); font-weight: 600; }
+.pq-limit {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(199,83,83,.28);
+  display: flex; flex-direction: column; gap: 4px;
+}
+.pq-limit-tag {
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: var(--warn);
+}
+.pq-limit-text {
+  font-size: clamp(11px, 1.47vw, 22px);
+  color: var(--dim); line-height: 1.5;
+}
+.pq-limit-text strong { color: var(--white); font-weight: 600; }
+
+/* ── SYSTEM OVERVIEW · takeaway band under the diagram ── */
+.arch-takeaway {
+  margin-top: 14px;
+  display: flex; align-items: center; gap: 18px;
+  padding: 12px 22px;
+  background: linear-gradient(90deg, rgba(79,163,217,.10) 0%, rgba(212,168,92,.10) 100%);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.arch-takeaway .ta-tag {
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: .18em; text-transform: uppercase;
+  color: var(--white);
+  padding: 5px 10px; border-radius: 4px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.18);
+  white-space: nowrap;
+}
+.arch-takeaway .ta-body {
+  font-size: clamp(13px, 1.69vw, 26px);
+  color: var(--dim); line-height: 1.5;
+}
+.arch-takeaway .ta-body em { color: var(--blue); font-style: normal; font-weight: 600; }
+.arch-takeaway .ta-body strong { color: var(--gold); font-weight: 600; }
+
+.gap-conclusion {
+  margin-top: 18px;
+  padding: 16px 24px;
+  background: linear-gradient(90deg, var(--blue-dim) 0%, rgba(79,163,217,.04) 100%);
+  border-left: 4px solid var(--blue);
+  border-radius: 10px;
+  font-size: clamp(14px, 1.88vw, 27px);
+  line-height: 1.55;
+  color: var(--white);
+}
+.gap-conclusion strong { color: var(--blue); }
+
+/* ── RESULTS BAR CHARTS ── */
+.results-data-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 26px; width: 100%;
+  flex: 1; min-height: 0; align-items: stretch;
+}
+.rd-category {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 28px 26px;
+  display: flex; flex-direction: column;
+  position: relative; overflow: hidden;
+  min-height: 0;
+}
+.rd-category::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--blue); opacity: .7;
+}
+.rd-icon {
+  width: 52px; height: 52px;
+  background: var(--blue-dim);
+  border: 1px solid var(--blue);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 18px;
+}
+.rd-icon svg { width: 26px; height: 26px; fill: var(--blue); }
+.rd-bars-wrap {
+  display: flex; flex-direction: column;
+  justify-content: center;
+  flex: 1; min-height: 0;
+}
+.rd-cat-title {
+  font-family: var(--mono); font-size: clamp(13px, 1.15vw, 18px); color: var(--blue);
+  text-transform: uppercase; letter-spacing: .12em;
+  margin-bottom: 18px; padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.rd-foot {
+  margin-top: 20px;
+  padding: 18px 20px;
+  background: rgba(91,184,122,.08);
+  border: 1px solid rgba(91,184,122,.32);
+  border-radius: 10px;
+  display: flex; align-items: center; gap: 14px;
+}
+.rd-foot-check {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--good); color: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 20px; flex-shrink: 0;
+}
+.rd-foot-text {
+  font-size: clamp(15px, 1.6vw, 24px);
+  color: var(--white); line-height: 1.35;
+}
+.rd-bar { margin-bottom: 26px; }
+.rd-bar:last-child { margin-bottom: 0; }
+.rd-bar-row {
+  display: flex; justify-content: space-between;
+  align-items: baseline; margin-bottom: 12px;
+  gap: 14px;
+}
+.rd-bar-label { font-size: clamp(16px, 1.75vw, 28px); color: var(--dim); }
+.rd-bar-val {
+  font-family: var(--mono); font-size: clamp(16px, 1.75vw, 28px);
+  font-weight: 600; color: var(--white);
+}
+.rd-bar-val.ph { color: rgba(79,163,217,.45); font-style: italic; }
+.rd-bar-track {
+  height: 10px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.03);
+  border-radius: 4px; overflow: hidden;
+}
+.rd-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue) 0%, rgba(79,163,217,0.55) 100%);
+  border-radius: 3px;
+  box-shadow: 0 0 4px rgba(79,163,217,0.22);
+  animation: bar-grow 1.2s ease-out forwards;
+}
+@keyframes bar-grow {
+  from { transform: scaleX(0); transform-origin: left; }
+  to   { transform: scaleX(1); transform-origin: left; }
+}
+/* ── USER STUDY SLIDES ── */
+.us-overview-grid {
+  display: grid; grid-template-columns: 1.05fr 1fr;
+  gap: 32px; width: 100%;
+  flex: 1; min-height: 0;
+}
+.us-left { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+.us-setup {
+  background: rgba(79,163,217,.05);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 26px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.us-setup-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.us-setup-row:last-child { border-bottom: none; }
+.us-setup-lbl {
+  font-family: var(--mono); font-size: clamp(11px, 1.1vw, 16px);
+  color: var(--muted); text-transform: uppercase; letter-spacing: .12em;
+}
+.us-setup-val {
+  font-size: clamp(15px, 1.6vw, 24px); font-weight: 600; color: var(--white);
+}
+.us-headlines {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.us-kpi {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--blue);
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+.us-kpi-metric {
+  font-family: var(--mono); font-weight: 800;
+  font-size: clamp(20px, 2.4vw, 36px);
+  color: var(--blue); line-height: 1.1;
+  margin-bottom: 6px;
+}
+.us-kpi-detail {
+  font-size: clamp(12px, 1.25vw, 18px);
+  color: var(--dim); line-height: 1.4;
+}
+.us-right { min-width: 0; display: flex; }
+.us-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  align-self: stretch;
+}
+.us-table th, .us-table td {
+  padding: 12px 18px;
+  text-align: left;
+  font-size: clamp(13px, 1.4vw, 21px);
+}
+.us-table thead th {
+  font-family: var(--mono); font-size: clamp(11px, 1.1vw, 16px);
+  color: var(--blue); text-transform: uppercase; letter-spacing: .12em;
+  background: rgba(79,163,217,.05);
+  padding-top: 16px; padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.us-table tbody tr { border-bottom: 1px solid rgba(255,255,255,.04); }
+.us-table tbody tr:last-child { border-bottom: none; }
+.us-table .lbl { color: var(--dim); }
+.us-table .he  { color: var(--blue); font-family: var(--mono); font-weight: 600; }
+.us-table .ct  { color: var(--muted); font-family: var(--mono); }
+
+.us-tasks-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 22px; width: 100%;
+  flex: 1; min-height: 0;
+}
+.us-task {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 18px;
+  display: flex; flex-direction: column;
+  gap: 12px; min-width: 0; min-height: 0;
+}
+.us-task-tag {
+  font-family: var(--mono); font-size: clamp(11px, 1.1vw, 16px);
+  color: var(--blue); letter-spacing: .14em; text-transform: uppercase;
+}
+.us-task-title {
+  font-size: clamp(17px, 1.85vw, 28px);
+  font-weight: 700; color: var(--white); line-height: 1.2;
+}
+.us-task-img {
+  flex: 1; min-height: 0;
+  background: rgba(255,255,255,.02);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px;
+  display: flex; align-items: center; justify-content: center;
+}
+.us-task-img img {
+  max-width: 100%; max-height: 100%; object-fit: contain;
+}
+.us-task-stats {
+  display: flex; flex-direction: column; gap: 6px;
+}
+.us-stat {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 10px;
+  font-size: clamp(12px, 1.3vw, 19px);
+}
+.us-stat-lbl { color: var(--muted); font-family: var(--mono); }
+.us-stat-val { color: var(--white); font-family: var(--mono); font-weight: 600; }
+.us-stat.sig {
+  background: rgba(91,184,122,.08);
+  border: 1px solid rgba(91,184,122,.35);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: var(--good); font-family: var(--mono);
+  font-size: clamp(11px, 1.15vw, 16px);
+  margin-top: 4px;
+  justify-content: center;
+  letter-spacing: .06em;
+}
+
+.rd-bar-fill.ph {
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(79,163,217,.25) 0px, rgba(79,163,217,.25) 6px,
+    rgba(79,163,217,.10) 6px, rgba(79,163,217,.10) 12px);
+  box-shadow: none;
+}
+h3 {
+  font-size: clamp(18px, 2.38vw, 42px);
+  font-weight: 700; color: var(--white);
+  margin-bottom: 10px;
+}
+
+.two-col {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 48px; align-items: center; width: 100%;
+}
+
+/* IMPORTANT: do NOT set `display: flex` on the <li>. Flex on the li
+   makes <strong> and the trailing text become separate flex items
+   that lay out side-by-side as two parallel columns, breaking sentence
+   flow. Use a left-gutter pattern (absolute marker + padding-left)
+   so inline content wraps as one normal text block. */
+.bullets {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.bullets li {
+  position: relative; padding-left: 22px;
+  font-size: clamp(15px, 1.94vw, 30px); line-height: 1.55; color: var(--dim);
+}
+.bullets li::before {
+  content: '▸'; color: var(--blue);
+  position: absolute; left: 0; top: 0;
+  line-height: 1.55;
+}
+/* Bold lead-ins in bullets pop against the dim body text. Inline
+   style= overrides (slides 12, 14) still win where they're set. */
+.bullets li strong { color: var(--white); font-weight: 600; }
+.bullets li code {
+  font-family: var(--mono); font-size: 0.88em;
+  color: var(--blue); background: rgba(79,163,217,.08);
+  padding: 1px 6px; border-radius: 4px;
+}
+
+/* generic image-frame */
+.img-frame {
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 8px;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.img-frame img {
+  max-width: 100%; max-height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+  display: block;
+}
+.img-cap {
+  font-family: var(--mono); font-size: 11px; color: var(--muted);
+  text-align: center; margin-top: 10px;
+  letter-spacing: .08em; text-transform: uppercase;
+}
+
+/* ── SLIDE 1: TITLE ── */
+.s-title {
+  align-items: center; text-align: center;
+  background: radial-gradient(ellipse at 50% 60%, rgba(79,163,217,.07) 0%, transparent 65%);
+}
+.hero-name {
+  font-size: clamp(64px, 11.25vw, 205px); font-weight: 900;
+  letter-spacing: -.03em; color: var(--white); line-height: 1; margin-bottom: 12px;
+}
+.hero-name em { color: var(--blue); font-style: normal; }
+.hero-full {
+  font-size: clamp(13px, 1.75vw, 29px); color: var(--muted); font-weight: 400;
+  letter-spacing: .02em; margin-bottom: 18px;
+}
+.hero-tagline {
+  font-size: clamp(15px, 2.25vw, 38px); color: var(--blue); font-weight: 500;
+}
+.presenter {
+  position: absolute; bottom: 48px;
+  font-family: var(--mono); font-size: 13px; color: var(--muted);
+}
+
+/* ── SLIDE: HOOK ── */
+.s-hook {
+  align-items: center; text-align: center;
+  background: radial-gradient(ellipse at 50% 50%, rgba(79,163,217,.05) 0%, transparent 60%);
+}
+.hook-q {
+  font-size: clamp(28px, 5.0vw, 93px); font-weight: 700;
+  line-height: 1.3; color: var(--white); max-width: 1000px;
+  letter-spacing: -.01em;
+}
+.hook-q em { color: var(--blue); font-style: normal; }
+
+/* ── SLIDE: PROBLEM ── */
+.prob-diagram {
+  display: flex; flex-direction: column; align-items: center; gap: 20px;
+  width: 100%;
+}
+.op-box {
+  background: var(--blue-dim); border: 1px solid var(--blue);
+  border-radius: 14px; padding: 24px 48px;
+  font-size: clamp(22px, 2.4vw, 36px); font-weight: 700; color: var(--blue);
+  box-shadow: var(--blue-glow);
+}
+.arr { color: var(--muted); font-size: clamp(32px, 3.4vw, 52px); }
+.proto-tag {
+  font-family: var(--mono); font-size: clamp(13px, 1.3vw, 19px); color: rgba(79,163,217,.55);
+  letter-spacing: .1em; text-transform: uppercase;
+}
+.robot-grid {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 14px;
+  width: 100%;
+}
+.r-box {
+  background: var(--card); border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px; padding: 18px 10px; text-align: center;
+  font-size: clamp(14px, 1.45vw, 22px); color: var(--dim);
+}
+.r-box .ico { font-size: clamp(28px, 3.2vw, 48px); display: block; margin-bottom: 6px; }
+.overload {
+  font-family: var(--mono); font-size: clamp(20px, 1.35vw, 20px); color: var(--warn);
+  letter-spacing: .12em; text-transform: uppercase; margin-top: 6px;
+}
+
+/* ── SLIDE: RESEARCH Q ── */
+.s-rq { align-items: flex-start; }
+.rq-text {
+  font-size: clamp(20px, 3.25vw, 58px); font-style: italic; font-weight: 500;
+  line-height: 1.55; color: var(--white); max-width: 1000px;
+  border-left: 4px solid var(--blue); padding-left: 32px;
+}
+
+/* ── COMPLEXITY STACK ── */
+.complexity-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px; width: 100%;
+}
+.cx-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px 30px;
+  position: relative;
+  overflow: hidden;
+}
+.cx-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  background: var(--blue); opacity: .65;
+}
+.cx-icon {
+  width: 56px; height: 56px;
+  background: var(--blue-dim);
+  border: 1px solid var(--blue);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 20px;
+}
+.cx-icon svg { width: 30px; height: 30px; fill: var(--blue); }
+.cx-title {
+  font-size: clamp(20px, 2.1vw, 32px); font-weight: 700; color: var(--white);
+  margin-bottom: 8px;
+}
+.cx-subtitle {
+  font-family: var(--mono); font-size: clamp(11px, 1.05vw, 15px); color: var(--blue);
+  text-transform: uppercase; letter-spacing: .12em;
+  margin-bottom: 18px;
+}
+.cx-list {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.cx-list li {
+  font-size: clamp(14px, 1.45vw, 22px); color: var(--dim); line-height: 1.5;
+  padding-left: 18px; position: relative;
+}
+.cx-list li::before {
+  content: '·'; color: var(--blue); position: absolute; left: 2px; font-size: 24px; line-height: .9;
+}
+.cx-count {
+  position: absolute; top: 22px; right: 26px;
+  font-family: var(--mono); font-size: clamp(11px, 1.1vw, 16px); color: rgba(79,163,217,.5);
+  letter-spacing: .08em;
+}
+
+/* ── SYSTEM OVERVIEW · visual closed-loop diagram (SVG) ── */
+.arch-viz {
+  width: 100%; flex: 1; min-height: 0;
+  display: flex; justify-content: center; align-items: center;
+  margin-top: 4px;
+}
+.arch-svg {
+  width: 100%; height: 100%;
+  max-width: 100%; max-height: 100%;
+  display: block;
+}
+
+/* tight chrome on System Overview so the diagram dominates */
+.slide.s-overview { padding: 18px 28px 24px; justify-content: flex-start; }
+.slide.s-overview .label { font-size: clamp(22px, 3.25vw, 54px); margin-bottom: 2px; }
+.slide.s-overview h2 { font-size: clamp(13px, 1.69vw, 27px); margin-bottom: 8px; }
+.arch-svg .arch-title {
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 26px; font-weight: 700;
+  fill: #ffffff; letter-spacing: 2.6px;
+}
+.arch-svg .arch-title.hero {
+  fill: #D4A85C; font-size: 32px;
+}
+.arch-svg .arch-sub {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 19px; fill: #c8d3e8; font-weight: 500;
+}
+.arch-svg .arch-sub.hero {
+  fill: #c8d3e8; font-size: 22px;
+}
+.arch-svg .arch-meta {
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 15px; fill: #7a8599; letter-spacing: 0.6px;
+}
+.arch-svg .arch-edge {
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 17px; letter-spacing: 1.8px;
+  font-weight: 600;
+  paint-order: stroke fill;
+  stroke: #080d1a;
+  stroke-width: 6px;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.arch-svg .arch-edge.cmd      { fill: #4FA3D9; }
+.arch-svg .arch-edge.fb       { fill: #D4A85C; }
+.arch-svg .arch-edge.fb-muted { fill: rgba(212,168,92,.75); font-size: 15px; font-style: italic; font-weight: 400; stroke-width: 5px; }
+.arch-svg .arch-legend {
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 15px; letter-spacing: 2px;
+  fill: #c8d3e8;
+}
+
+/* ── HARDWARE PHOTO SHOWCASE ── */
+.photo-showcase {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px; width: 100%; align-items: stretch;
+  flex: 1; min-height: 0;
+}
+.photo-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.photo-card .pc-img {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 0;
+  background: rgba(0,0,0,.2);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.photo-card .pc-img img {
+  max-width: 100%; max-height: 100%;
+  object-fit: contain;
+}
+.photo-card .pc-video {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 0;
+  background: rgba(0,0,0,.2);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* ── BACKUP DEMO VIDEO SLIDE ── */
+.demo-backup-frame {
+  flex: 1; min-height: 0;
+  width: 100%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.35);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+  overflow: hidden;
+}
+.demo-backup-frame video {
+  max-width: 100%; max-height: 100%;
+  width: auto; height: 100%;
+  object-fit: contain;
+  border-radius: 10px;
+  background: #000;
+}
+.demo-backup-frame.demo-backup-dual {
+  gap: 14px;
+}
+.demo-backup-frame.demo-backup-dual video {
+  flex: 1; min-width: 0;
+  width: 100%; height: 100%;
+  max-width: 50%;
+}
+.photo-card .pc-video video {
+  max-width: 100%; max-height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+}
+.photo-card .pc-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.photo-card .pc-name {
+  font-size: clamp(18px, 1.85vw, 28px); font-weight: 700; color: var(--white);
+}
+.photo-card .pc-tag {
+  font-family: var(--mono); font-size: clamp(11px, 1.05vw, 15px); color: var(--blue);
+  text-transform: uppercase; letter-spacing: .12em;
+  padding: 4px 12px; border: 1px solid var(--border); border-radius: 5px;
+}
+.photo-card .pc-spec {
+  margin-top: 14px;
+  font-size: clamp(13px, 1.3vw, 20px); color: var(--muted); line-height: 1.5;
+  font-family: var(--mono);
+}
+
+/* ── GESTURE TABLE w/ animated hands ── */
+.gesture-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 18px; width: 100%;
+}
+.gesture-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px 18px;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center; gap: 10px;
+}
+.gesture-card.dim { opacity: .55; }
+.hand-anim {
+  width: 100px; height: 100px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 4px;
+}
+.hand-anim svg { width: 100%; height: 100%; }
+.gesture-card .g-badge {
+  display: inline-block;
+  font-family: var(--mono); font-size: 11px;
+  background: var(--blue-dim); color: var(--blue);
+  border: 1px solid var(--border);
+  padding: 4px 12px; border-radius: 5px;
+  letter-spacing: .1em; text-transform: uppercase;
+}
+.gesture-card .g-name {
+  font-size: 16px; font-weight: 700; color: var(--white);
+}
+.gesture-card .g-effect {
+  font-size: clamp(13px, 1.4vw, 21px); color: var(--muted); line-height: 1.5;
+}
+
+/* ── GESTURE → PIPELINE merged slide ── */
+.gesture-merged .gesture-grid { gap: 20px; }
+.gesture-merged .gesture-card { padding: 24px 20px; gap: 12px; }
+.gesture-merged .gesture-card .g-name { font-size: clamp(17px, 1.85vw, 28px); }
+.gesture-merged .hand-anim { width: 120px; height: 120px; }
+
+.pipe-flow {
+  display: flex; align-items: stretch; gap: 0;
+  width: 100%; margin-top: 28px;
+  background: rgba(79,163,217,.03);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 28px 32px;
+}
+.pipe-step {
+  flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 10px;
+  text-align: center;
+  padding: 0 14px;
+  position: relative;
+  min-width: 0;
+}
+.pipe-step .ps-tag {
+  font-family: var(--mono); font-size: clamp(12px, 1.2vw, 18px);
+  color: var(--blue); letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.pipe-step .ps-title {
+  font-size: clamp(18px, 2.0vw, 32px);
+  font-weight: 700; color: var(--white);
+  line-height: 1.2;
+}
+.pipe-step .ps-note {
+  font-size: clamp(14px, 1.5vw, 22px);
+  color: var(--muted); line-height: 1.4;
+}
+.pipe-step.final .ps-title { color: var(--blue); }
+.pipe-arrow {
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  width: 42px;
+  color: var(--blue); font-size: 36px;
+  opacity: .75;
+}
+
+/* hand SVG animations */
+@keyframes pulse-glow {
+  0%, 100% { filter: drop-shadow(0 0 0 rgba(79,163,217,0)); }
+  50%      { filter: drop-shadow(0 0 8px rgba(79,163,217,.55)); }
+}
+@keyframes finger-wave {
+  0%, 100% { transform: rotate(0deg); }
+  50%      { transform: rotate(-6deg); }
+}
+@keyframes point-jab {
+  0%, 100% { transform: translateX(0); }
+  50%      { transform: translateX(4px); }
+}
+@keyframes fist-squeeze {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(.95); }
+}
+@keyframes swipe-wiggle {
+  0%, 100% { transform: rotate(-8deg); }
+  50%      { transform: rotate(8deg); }
+}
+.hand-anim.open svg     { animation: pulse-glow 2.4s ease-in-out infinite; }
+.hand-anim.point svg    { animation: point-jab 1.6s ease-in-out infinite, pulse-glow 2.4s ease-in-out infinite; }
+.hand-anim.fist svg     { animation: fist-squeeze 1.8s ease-in-out infinite; }
+.hand-anim.swipe svg    { animation: swipe-wiggle 2.2s ease-in-out infinite; transform-origin: 50% 75%; }
+.hand-anim .finger-tip  { animation: finger-wave 2.6s ease-in-out infinite; transform-origin: 50% 100%; }
+
+/* ── SWARM INTEL ── */
+.stack { display: flex; flex-direction: column; gap: 0; }
+.stack-item {
+  display: flex; align-items: center; gap: 24px;
+  padding: 22px 26px; background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.stack-item.hi { border-color: var(--blue); box-shadow: var(--blue-glow); }
+.stack-item .si-ico { font-size: clamp(28px, 3vw, 44px); flex-shrink: 0; width: 56px; text-align: center; }
+.si-title { font-size: clamp(20px, 2.3vw, 36px); font-weight: 700; color: var(--white); line-height: 1.2; }
+.si-sub { font-size: clamp(13px, 1.45vw, 22px); color: var(--muted); margin-top: 6px; font-family: var(--mono); }
+.stack-bar { width: 2px; height: 18px; background: var(--blue); opacity: .3; margin-left: 56px; }
+.insight {
+  background: var(--blue-dim); border: 1px solid var(--border);
+  border-radius: 14px; padding: 28px 32px;
+  font-size: clamp(17px, 2.25vw, 38px); line-height: 1.7; color: var(--white);
+}
+.insight strong { color: var(--blue); }
+
+/* ── VALIDATION ── */
+.val-grid {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 28px; width: 100%;
+  flex: 1; min-height: 0; align-items: stretch;
+}
+.val-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 30px 28px;
+  display: flex; flex-direction: column;
+  position: relative; overflow: hidden;
+  min-height: 0;
+}
+.val-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--blue); opacity: .7;
+}
+.vc-icon {
+  width: 52px; height: 52px;
+  background: var(--blue-dim);
+  border: 1px solid var(--blue);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 18px;
+}
+.vc-icon svg { width: 26px; height: 26px; fill: var(--blue); }
+.vc-title {
+  font-family: var(--mono); font-size: clamp(13px, 1.15vw, 18px); color: var(--blue);
+  text-transform: uppercase; letter-spacing: .12em;
+  margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--border);
+}
+.vc-rows {
+  display: flex; flex-direction: column;
+  justify-content: center;
+  flex: 1; min-height: 0;
+}
+.vc-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 18px 0; border-bottom: 1px solid rgba(255,255,255,.04);
+  font-size: clamp(17px, 1.85vw, 30px); gap: 14px;
+}
+.vc-row:last-child { border-bottom: none; }
+.vc-row .vl { color: var(--muted); flex: 1; }
+.vc-row .vv { font-family: var(--mono); font-weight: 600; color: var(--white); flex-shrink: 0; }
+.vv.ph { color: rgba(79,163,217,.45); font-style: italic; }
+.vc-foot {
+  margin-top: 20px;
+  padding: 16px 20px;
+  background: rgba(79,163,217,.06);
+  border: 1px solid rgba(79,163,217,.25);
+  border-radius: 10px;
+}
+.vc-foot-label {
+  font-family: var(--mono); font-size: clamp(12px, 1.15vw, 17px);
+  color: var(--blue); letter-spacing: .14em; text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.vc-foot-val {
+  font-size: clamp(15px, 1.6vw, 24px);
+  color: var(--white); font-family: var(--mono);
+  line-height: 1.4;
+}
+
+/* ── DEMO SETUP ── */
+.arena {
+  border: 2px dashed rgba(79,163,217,.22); border-radius: 16px;
+  position: relative; width: 520px; height: 340px; flex-shrink: 0;
+  background: rgba(79,163,217,.02);
+}
+.arena-lbl {
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+  font-family: var(--mono); font-size: 10px; color: rgba(79,163,217,.35);
+  text-transform: uppercase; letter-spacing: .1em; white-space: nowrap;
+}
+.pm {
+  position: absolute; display: flex; flex-direction: column;
+  align-items: center; gap: 5px; transform: translate(-50%,-50%);
+}
+.pc {
+  width: 44px; height: 44px; border-radius: 50%; display: flex;
+  align-items: center; justify-content: center; font-weight: 800; font-size: 15px;
+}
+.pc.start { background: rgba(255,255,255,.08); border: 2px solid rgba(255,255,255,.25); color: var(--white); }
+.pc.target { background: var(--blue-dim); border: 2px solid var(--blue); color: var(--blue); }
+.pm-lbl { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+.bots {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 6px;
+}
+.bd {
+  width: 26px; height: 26px; border-radius: 5px;
+  background: var(--blue-dim); border: 1px solid var(--blue);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 8px; color: var(--blue);
+}
+
+/* ── LIVE DEMO STEPS WITH ANIMATION ── */
+.demo-steps {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 22px; width: 100%;
+}
+
+/* ── DEMO MERGED (setup strip on top, full-width demo steps below) ── */
+.dm-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+}
+.dm-setup-strip {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  width: 100%;
+  flex-shrink: 0;
+  background: rgba(79,163,217,.03);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 34px;
+}
+.arena.arena-compact {
+  width: 520px; height: 280px; flex-shrink: 0;
+}
+.arena.arena-compact .arena-lbl {
+  font-size: clamp(11px, 1.0vw, 14px);
+}
+.arena.arena-compact .pc {
+  width: 56px; height: 56px; font-size: 22px;
+  border-width: 3px;
+}
+.arena.arena-compact .pc.target { box-shadow: 0 0 12px rgba(79,163,217,0.4); }
+.arena.arena-compact .pm-lbl {
+  font-size: clamp(11px, 1.05vw, 15px);
+  margin-top: 2px;
+}
+.arena.arena-compact .bd {
+  width: 28px; height: 28px; font-size: 9px;
+}
+.dm-bullets {
+  list-style: none; padding: 0; margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 32px;
+  flex: 1;
+}
+.dm-bullets li {
+  font-size: clamp(15px, 1.65vw, 24px);
+  color: var(--dim); line-height: 1.4;
+  padding-left: 20px;
+  position: relative;
+}
+.dm-bullets li::before {
+  content: ''; position: absolute;
+  left: 0; top: 0.7em;
+  width: 10px; height: 1px;
+  background: var(--blue); opacity: .8;
+}
+.dm-bullets li strong { color: var(--white); font-weight: 600; }
+.dm-steps {
+  flex: 1;
+  min-height: 0;
+  align-items: stretch;
+}
+.dm-steps .demo-step { min-height: 0; overflow: hidden; }
+.dm-steps .demo-step .ds-anim {
+  flex: 1;
+  min-height: 200px;
+  height: auto;
+  overflow: hidden;
+}
+.demo-step {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 20px;
+  display: flex; flex-direction: column;
+  gap: 14px;
+  position: relative;
+  overflow: hidden;
+}
+.demo-step .ds-num {
+  position: absolute; top: 14px; right: 18px;
+  font-family: var(--mono); font-size: 60px; font-weight: 800;
+  color: rgba(79,163,217,.08); line-height: 1;
+}
+.demo-step .ds-tag {
+  font-family: var(--mono); font-size: clamp(12px, 1.2vw, 17px); color: var(--blue);
+  text-transform: uppercase; letter-spacing: .14em;
+}
+.demo-step .ds-title {
+  font-size: clamp(10px, 1.0vw, 18px); font-weight: 500; color: var(--white);
+}
+.demo-step .ds-anim {
+  height: 130px;
+  background: rgba(0,0,0,.25);
+  border: 1px solid rgba(79,163,217,.12);
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+  margin: 4px 0;
+}
+.demo-step .ds-note {
+  font-size: clamp(13px, 1.4vw, 21px); color: var(--muted); line-height: 1.5;
+  font-style: italic;
+}
+
+/* === Shared A/B/C zone markers and bot styling for demo-step anims === */
+.ds-anim .zone {
+  position: absolute;
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-weight: 800; font-size: 18px;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  letter-spacing: 0;
+}
+.ds-anim .zone .zone-lbl {
+  position: absolute; top: 54px;
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: var(--muted); white-space: nowrap;
+}
+.ds-anim .zone.z-A {
+  left: 14%; top: 68%;
+  color: rgba(255,255,255,.78);
+  background: rgba(255,255,255,.06);
+  border: 2px dashed rgba(255,255,255,.45);
+}
+.ds-anim .zone.z-B {
+  left: 78%; top: 26%;
+  color: var(--blue);
+  background: var(--blue-dim);
+  border: 2px solid var(--blue);
+  box-shadow: 0 0 12px rgba(79,163,217,0.35);
+}
+.ds-anim .zone.z-C {
+  left: 78%; top: 68%;
+  color: var(--gold);
+  background: rgba(212,168,92,0.12);
+  border: 2px solid var(--gold);
+  box-shadow: 0 0 12px rgba(212,168,92,0.35);
+}
+.ds-anim .bot-mini {
+  position: absolute;
+  width: 18px; height: 18px;
+  border-radius: 4px;
+  background: var(--blue);
+  box-shadow: 0 0 8px var(--blue);
+  transform: translate(-50%, -50%);
+  z-index: 2;
+}
+.ds-anim .bot-mini.dim {
+  background: rgba(255,255,255,0.22);
+  box-shadow: none;
+  border: 1px solid rgba(255,255,255,0.35);
+}
+
+/* === Anim 1: Global — all four bots travel A → B === */
+.anim-global .bot-mini.b1 { animation: g-b1 4s ease-in-out infinite; }
+.anim-global .bot-mini.b2 { animation: g-b2 4s ease-in-out .08s infinite; }
+.anim-global .bot-mini.b3 { animation: g-b3 4s ease-in-out .16s infinite; }
+.anim-global .bot-mini.b4 { animation: g-b4 4s ease-in-out .24s infinite; }
+@keyframes g-b1 { 0%,15%{left:8%;top:62%;} 60%,100%{left:72%;top:20%;} }
+@keyframes g-b2 { 0%,15%{left:18%;top:62%;} 60%,100%{left:84%;top:20%;} }
+@keyframes g-b3 { 0%,15%{left:8%;top:74%;} 60%,100%{left:72%;top:32%;} }
+@keyframes g-b4 { 0%,15%{left:18%;top:74%;} 60%,100%{left:84%;top:32%;} }
+
+/* === Anim 2: Selective — start clustered at B; two selected, those two travel to C === */
+.anim-select .bot-mini.s1 { animation: s-s1 4s ease-in-out infinite; }
+.anim-select .bot-mini.s2 { animation: s-s2 4s ease-in-out .1s infinite; }
+.anim-select .bot-mini.s3 { left: 72%; top: 20%; }
+.anim-select .bot-mini.s4 { left: 84%; top: 20%; }
+@keyframes s-s1 { 0%,25%{left:72%;top:32%;} 65%,100%{left:72%;top:74%;} }
+@keyframes s-s2 { 0%,25%{left:84%;top:32%;} 65%,100%{left:84%;top:74%;} }
+.anim-select .ring {
+  position: absolute;
+  width: 56px; height: 36px;
+  left: 78%; top: 28%;
+  border: 2px solid var(--blue);
+  border-radius: 8px;
+  transform: translate(-50%, -50%);
+  animation: select-ring 4s ease-in-out infinite;
+  z-index: 1;
+  box-shadow: 0 0 10px rgba(79,163,217,0.4);
+}
+@keyframes select-ring {
+  0%        { opacity: 0; transform: translate(-50%,-50%) scale(0.7); }
+  15%       { opacity: 1; transform: translate(-50%,-50%) scale(1.1); }
+  25%       { opacity: 0.9; transform: translate(-50%,-50%) scale(1); }
+  40%, 100% { opacity: 0; transform: translate(-50%,-50%) scale(1); }
+}
+
+/* === Anim 3: Reselect ALL — for step 3 only, B is relocated to the LEFT side and C to the RIGHT
+   side of the box. Bots converge into a horizontal line between them, spread fully across the
+   width with proper spacing.                                                                    */
+.anim-form .zone.z-B { left: 10%; top: 50%; }
+.anim-form .zone.z-C { left: 90%; top: 50%; }
+.anim-form .bot-mini.f1 { animation: f-b1 4s ease-in-out infinite; }
+.anim-form .bot-mini.f2 { animation: f-b2 4s ease-in-out .08s infinite; }
+.anim-form .bot-mini.f3 { animation: f-b3 4s ease-in-out .16s infinite; }
+.anim-form .bot-mini.f4 { animation: f-b4 4s ease-in-out .24s infinite; }
+@keyframes f-b1 { 0%,15%{left:10%;top:42%;} 65%,100%{left:30%;top:50%;} }
+@keyframes f-b2 { 0%,15%{left:10%;top:58%;} 65%,100%{left:44%;top:50%;} }
+@keyframes f-b3 { 0%,15%{left:90%;top:42%;} 65%,100%{left:58%;top:50%;} }
+@keyframes f-b4 { 0%,15%{left:90%;top:58%;} 65%,100%{left:72%;top:50%;} }
+.anim-form .line-guide {
+  position: absolute;
+  left: 18%; right: 18%; top: 50%;
+  height: 0;
+  border-top: 1.5px dashed rgba(79,163,217,0.5);
+  z-index: 0;
+}
+
+/* ── RESULTS GRAPH SLIDE ── */
+.results-layout {
+  display: grid; grid-template-columns: 1.5fr 1fr;
+  gap: 32px; width: 100%; align-items: stretch;
+  flex: 1; min-height: 0;
+}
+.results-img {
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  min-height: 0;
+}
+.results-img img {
+  max-width: 100%; max-height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+.results-notes {
+  display: flex; flex-direction: column; gap: 20px;
+  justify-content: center;
+}
+.kpi-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 5px solid var(--blue);
+  border-radius: 12px;
+  padding: 24px 28px;
+}
+.kpi-card .k-label {
+  font-family: var(--mono); font-size: clamp(11px, 1.1vw, 16px); color: var(--blue);
+  text-transform: uppercase; letter-spacing: .12em;
+  margin-bottom: 8px;
+}
+.kpi-card .k-value {
+  font-size: clamp(26px, 3.2vw, 56px); font-weight: 800;
+  font-family: var(--mono); color: var(--white);
+  line-height: 1.1;
+}
+.kpi-card .k-note {
+  font-size: clamp(13px, 1.4vw, 21px); color: var(--muted); margin-top: 8px;
+  line-height: 1.45;
+}
+
+/* ── APPROACH · WHY INTENT SCALES (Big-O chart) ── */
+.approach-scale-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.4fr);
+  gap: 36px; width: 100%;
+  flex: 1; min-height: 0;
+  align-items: stretch;
+}
+.approach-scale-grid .results-notes {
+  justify-content: center;
+}
+.bigo-chart {
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px 24px;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 0; min-width: 0;
+}
+.bigo-chart svg { width: 100%; height: 100%; max-height: 100%; }
+
+/* ── HUMAN OPERATOR / USE CASES SLIDE ── */
+.use-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: 26px; width: 100%;
+}
+.use-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 30px 30px;
+}
+.use-card .uc-icon {
+  width: 56px; height: 56px;
+  background: var(--blue-dim);
+  border: 1px solid var(--blue);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 18px;
+  font-size: clamp(22px, 2.3vw, 34px);
+}
+.use-card h3 {
+  margin-bottom: 10px;
+  font-size: clamp(20px, 2.1vw, 32px);
+}
+.use-card .uc-body {
+  font-size: clamp(15px, 1.6vw, 24px); color: var(--dim); line-height: 1.5;
+}
+.use-card .uc-tag {
+  display: inline-block; margin-top: 18px;
+  font-family: var(--mono); font-size: clamp(12px, 1.15vw, 17px);
+  color: var(--blue); letter-spacing: .12em;
+  text-transform: uppercase;
+  padding: 6px 14px; border: 1px solid var(--border); border-radius: 5px;
+}
+
+/* WHY HUMAN block */
+.why-human-banner {
+  background: linear-gradient(90deg, var(--blue-dim), transparent 80%);
+  border-left: 4px solid var(--blue);
+  border-radius: 10px;
+  padding: 18px 24px;
+  margin-bottom: 28px;
+}
+.why-human-banner .wh-q {
+  font-size: clamp(16px, 2.25vw, 35px);
+  font-weight: 600; color: var(--white);
+}
+.why-human-banner .wh-q em { color: var(--blue); font-style: normal; }
+
+/* ── LAB IRL slide ── */
+.lab-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px; width: 100%;
+  flex: 1; min-height: 0;
+}
+.lab-photo {
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 10px;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+.lab-photo .lp-img {
+  flex: 1; min-height: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.2);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.lab-photo .lp-img img {
+  max-width: 100%; max-height: 100%; object-fit: contain;
+}
+.lab-photo .lp-caption {
+  padding: 10px 14px 4px;
+  font-family: var(--mono); font-size: 11px;
+  color: var(--blue); letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.lab-photo .lp-sub {
+  padding: 0 14px 4px;
+  font-size: 12px; color: var(--muted);
+}
+
+/* ── SOFTWARE PIPELINE SLIDE ── */
+.pipeline-row {
+  display: grid; grid-template-columns: 1.4fr 1fr;
+  gap: 32px; width: 100%; align-items: center;
+  flex: 1; min-height: 0;
+}
+.pipeline-img {
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 0; height: 100%;
+}
+.pipeline-img img {
+  max-width: 100%; max-height: 100%;
+  object-fit: contain;
+}
+
+/* SENSOR LAYOUT SLIDE */
+.sensor-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 24px; width: 100%;
+  flex: 1; min-height: 0;
+}
+.sensor-pane {
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+.sensor-pane .sp-head {
+  padding: 4px 6px 12px;
+  font-family: var(--mono); font-size: 11px;
+  color: var(--blue); letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.sensor-pane .sp-img {
+  flex: 1; min-height: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.2);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.sensor-pane .sp-img img {
+  max-width: 100%; max-height: 100%; object-fit: contain;
+}
+
+/* ── CONCLUSION ── */
+.s-con { align-items: flex-start; }
+.con-p1 {
+  font-size: clamp(18px, 2.0vw, 32px); line-height: 1.5; color: var(--dim);
+  max-width: 1100px; margin-bottom: 28px;
+}
+.con-final {
+  font-size: clamp(20px, 2.6vw, 42px); font-weight: 700; line-height: 1.35;
+  color: var(--blue); max-width: 1100px;
+  border-left: 4px solid var(--blue); padding-left: 28px;
+}
+
+/* ── APPENDIX ── */
+.app-badge {
+  position: absolute; top: 22px; right: 82px;
+  font-family: var(--mono); font-size: 10px; color: var(--muted);
+  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+  padding: 4px 12px; border-radius: 20px; letter-spacing: .08em;
+}
+
+/* ── REFERENCES SLIDE ── */
+.cite-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 32px;
+  margin-top: 28px; align-items: stretch;
+}
+.cite-col {
+  background: rgba(255,255,255,.025);
+  border: 1px solid var(--border);
+  border-radius: 12px; padding: 24px 28px;
+  display: flex; flex-direction: column;
+}
+.cite-head {
+  font-family: var(--mono); font-size: 12px;
+  color: var(--blue); letter-spacing: .14em; margin-bottom: 14px;
+  padding-bottom: 12px; border-bottom: 1px solid var(--border);
+}
+.cite-item {
+  font-size: 15px; line-height: 1.55; color: var(--dim);
+  padding: 10px 0; border-bottom: 1px dashed rgba(255,255,255,.06);
+}
+.cite-item:last-child { border-bottom: none; }
+.cite-placeholder {
+  display: inline-block; font-family: var(--mono);
+  background: rgba(212,168,92,.10); border: 1px solid rgba(212,168,92,.5);
+  color: var(--gold); padding: 2px 9px; border-radius: 4px;
+  font-size: 12px; margin-right: 8px;
+  letter-spacing: .04em;
+}
+.cite-note {
+  margin-top: 22px; font-family: var(--mono); font-size: 11px;
+  color: var(--muted); text-align: center; font-style: italic;
+}
+
+
+/* ── LIMITATIONS SLIDE ── */
+.lim-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px;
+  margin-top: 28px;
+}
+.lim-card {
+  background: rgba(255,255,255,.025);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--warn);
+  border-radius: 10px; padding: 22px 26px;
+}
+.lim-card .lim-tag {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .14em;
+  color: var(--warn); margin-bottom: 10px;
+}
+.lim-card .lim-head {
+  font-size: 18px; font-weight: 700; color: var(--white);
+  margin-bottom: 10px; line-height: 1.3;
+}
+.lim-card .lim-body {
+  font-size: 14px; line-height: 1.55; color: var(--dim);
+}
+
+/* ── DRAFT BANNER (Results) ── */
+.draft-banner {
+  position: absolute; top: 16px; right: 84px;
+  background: var(--gold); color: #1a1408;
+  font-family: var(--mono); font-size: 10px; font-weight: 700;
+  letter-spacing: .14em; padding: 4px 10px; border-radius: 3px;
+  text-transform: uppercase; z-index: 5;
+}
+
+/* ── APPENDIX SLIDES ── */
+.slide.appendix { background: linear-gradient(180deg, #060912 0%, #080d1a 100%); }
+.appendix .app-tag {
+  display: inline-block;
+  font-family: var(--mono); font-size: 11px; letter-spacing: .14em;
+  color: var(--gold); border: 1px solid var(--gold);
+  padding: 3px 12px; border-radius: 3px; margin-bottom: 12px;
+}
+.app-grid { display: grid; gap: 18px; margin-top: 28px; }
+.app-grid.cols-2 { grid-template-columns: 1.2fr 1fr; }
+.app-pane {
+  background: rgba(255,255,255,.025);
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 22px 26px;
+}
+.app-pane h3 {
+  font-family: var(--mono); font-size: 11px; letter-spacing: .14em;
+  color: var(--blue); margin-bottom: 14px;
+}
+.app-pane p { font-size: 14px; color: var(--dim); line-height: 1.6; margin-bottom: 8px; }
+.app-pane code, .app-pre {
+  font-family: var(--mono); font-size: 12px; color: var(--dim);
+  background: rgba(0,0,0,.3); padding: 2px 6px; border-radius: 3px;
+}
+.app-pre {
+  display: block; white-space: pre; padding: 14px 18px;
+  border: 1px solid var(--border); border-radius: 6px;
+  overflow: hidden;
+}
+.app-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 8px 0; border-bottom: 1px dashed rgba(255,255,255,.06);
+  font-size: 14px;
+}
+.app-row:last-child { border-bottom: none; }
+.app-row .k { color: var(--white); font-weight: 500; }
+.app-row .v { color: var(--blue); font-family: var(--mono); }
+
+/* Appendix index overlay */
+#appendix-index {
+  position: fixed; inset: 0; background: rgba(6,9,18,.94);
+  z-index: 320; display: none; align-items: center; justify-content: center;
+  padding: 60px;
+}
+#appendix-index.open { display: flex; }
+.ai-box {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; padding: 44px 52px; max-width: 720px; width: 100%;
+}
+.ai-box .ai-tag {
+  font-family: var(--mono); font-size: 11px; color: var(--gold);
+  letter-spacing: .18em; margin-bottom: 8px;
+}
+.ai-box h3 {
+  font-size: 32px; color: var(--white); margin-bottom: 24px; font-weight: 700;
+}
+.ai-list { list-style: none; padding: 0; margin: 0; }
+.ai-list li {
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 16px; cursor: pointer;
+  transition: background .15s ease;
+}
+.ai-list li:hover { background: rgba(79,163,217,.05); }
+.ai-list li:last-child { border-bottom: none; }
+.ai-list .ai-num {
+  font-family: var(--mono); font-size: 11px; color: var(--blue);
+  width: 36px; flex-shrink: 0;
+}
+.ai-list .ai-title { font-size: 16px; color: var(--white); font-weight: 500; }
+.ai-list .ai-sub {
+  font-size: 12px; color: var(--muted); margin-left: auto;
+  font-family: var(--mono);
+}
+.ai-hint {
+  margin-top: 22px; font-family: var(--mono); font-size: 11px;
+  color: var(--muted); text-align: center;
+}
+
+/* ── ELAPSED CLOCK ── */
+#clock {
+  position: fixed; bottom: 14px; right: 110px;
+  font-family: var(--mono); font-size: 13px; color: var(--muted);
+  z-index: 200; letter-spacing: .05em;
+}
+#clock.running { color: var(--blue); }
+#clock.over { color: var(--warn); }
+
+/* ── KEYBOARD HELP OVERLAY ── */
+#kbd-help {
+  position: fixed; inset: 0; background: rgba(6,9,18,.92);
+  z-index: 320; display: none; align-items: center; justify-content: center;
+}
+#kbd-help.open { display: flex; }
+.kbd-box {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; padding: 40px 48px; max-width: 520px; width: 100%;
+}
+.kbd-box h3 {
+  font-size: 24px; color: var(--white); margin-bottom: 4px; font-weight: 700;
+}
+.kbd-box .kbd-sub {
+  font-family: var(--mono); font-size: 11px; color: var(--blue);
+  letter-spacing: .12em; margin-bottom: 24px;
+}
+.kbd-row {
+  display: flex; align-items: center; gap: 16px;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+  font-size: 15px; color: var(--dim);
+}
+.kbd-row:last-child { border-bottom: none; }
+.kbd-key {
+  font-family: var(--mono); font-size: 12px;
+  background: rgba(255,255,255,.06); border: 1px solid var(--border);
+  padding: 4px 10px; border-radius: 4px; min-width: 64px; text-align: center;
+  color: var(--white); flex-shrink: 0;
+}
+
+/* ── SLIDE TRANSITION ── */
+.slide { opacity: 1; transition: opacity .22s ease; }
+.slide.entering { opacity: 0; }
+
+/* ── EXPERIMENTAL METHOD STRIP ── */
+.method-strip {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: 14px; margin-top: 22px;
+}
+.method-cell {
+  background: rgba(255,255,255,.025);
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--blue);
+  border-radius: 8px; padding: 14px 16px;
+}
+.method-cell .mc-tag {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .14em;
+  color: var(--blue); margin-bottom: 8px;
+}
+.method-cell .mc-val {
+  font-family: var(--mono); font-size: 13px; color: var(--white);
+  font-weight: 600; line-height: 1.4;
+}
+.method-cell .mc-sub {
+  font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.4;
+}
+</style>
+</head>
+<body>
+
+<div id="zoom-indicator">ZOOM 100%</div>
+<div id="scale-stage">
+
+<div id="progress"></div>
+<div id="counter"></div>
+<div id="clock">00:00</div>
+
+<!-- ── KEYBOARD HELP OVERLAY ── -->
+<div id="kbd-help">
+  <div class="kbd-box">
+    <div class="kbd-sub">KEYBOARD CONTROLS</div>
+    <h3>Quick reference</h3>
+    <div class="kbd-row"><span class="kbd-key">→ / Space</span><span>Next slide</span></div>
+    <div class="kbd-row"><span class="kbd-key">←</span><span>Previous slide</span></div>
+    <div class="kbd-row"><span class="kbd-key">S</span><span>Toggle speaker notes</span></div>
+    <div class="kbd-row"><span class="kbd-key">F</span><span>Toggle fullscreen</span></div>
+    <div class="kbd-row"><span class="kbd-key">A</span><span>Open appendix index</span></div>
+    <div class="kbd-row"><span class="kbd-key">R</span><span>Reset elapsed timer</span></div>
+    <div class="kbd-row"><span class="kbd-key">+ / =</span><span>Zoom in (overrides auto-fit)</span></div>
+    <div class="kbd-row"><span class="kbd-key">−</span><span>Zoom out (overrides auto-fit)</span></div>
+    <div class="kbd-row"><span class="kbd-key">0</span><span>Re-enable auto-fit zoom</span></div>
+    <div class="kbd-row"><span class="kbd-key">Home / End</span><span>Jump to first / last main slide</span></div>
+    <div class="kbd-row"><span class="kbd-key">Esc</span><span>Close overlays</span></div>
+    <div class="kbd-row"><span class="kbd-key">?</span><span>Toggle this help</span></div>
+  </div>
+</div>
+
+<!-- ── APPENDIX INDEX OVERLAY ── -->
+<div id="appendix-index">
+  <div class="ai-box">
+    <div class="ai-tag">APPENDIX · Q&amp;A BACKUP</div>
+    <h3>Jump to a backup slide</h3>
+    <ul class="ai-list" id="ai-list"></ul>
+    <div class="ai-hint">Press number to jump &nbsp;·&nbsp; Esc to close &nbsp;·&nbsp; ← returns to main deck</div>
+  </div>
+</div>
+
+<div id="notes-panel">
+  <div id="notes-head">
+    Speaker Notes
+    <span id="notes-close">✕</span>
+  </div>
+  <div id="notes-body"></div>
+</div>
+
+<!-- ── REUSABLE HAND SVG SYMBOLS (right hand, palm forward) ── -->
+<svg width="0" height="0" style="position:absolute;">
+  <defs>
+    <!-- OPEN HAND: palm forward, all 5 fingers spread. Thumb on the LEFT (right hand). -->
+    <symbol id="hand-open" viewBox="0 0 100 100">
+      <g stroke="#4FA3D9" stroke-width="2.6" fill="rgba(79,163,217,.07)" stroke-linecap="round" stroke-linejoin="round">
+        <!-- palm -->
+        <path d="M 34 60 Q 34 80 50 90 Q 70 82 70 60 L 70 52 Q 70 47 65 47 L 38 47 Q 34 47 34 52 Z"/>
+        <!-- thumb (angled out-left from palm base) -->
+        <path class="finger-tip" d="M 34 58 Q 24 58 18 50 Q 14 42 20 38 Q 27 36 32 44 L 34 50"/>
+        <!-- index finger (just right of thumb knuckle) -->
+        <path d="M 39 47 L 39 16 Q 39 12 43 12 Q 47 12 47 16 L 47 47"/>
+        <!-- middle finger (longest, center) -->
+        <path d="M 48 47 L 48 8 Q 48 4 52 4 Q 56 4 56 8 L 56 47"/>
+        <!-- ring finger -->
+        <path d="M 57 47 L 57 14 Q 57 10 61 10 Q 65 10 65 14 L 65 47"/>
+        <!-- pinky (shortest, far right) -->
+        <path d="M 66 47 L 66 24 Q 66 20 70 20 Q 73 20 73 24 L 73 47"/>
+      </g>
+    </symbol>
+
+    <!-- POINT: index finger extended UP, others curled, thumb across. -->
+    <symbol id="hand-point" viewBox="0 0 100 100">
+      <g stroke="#4FA3D9" stroke-width="2.6" fill="rgba(79,163,217,.07)" stroke-linecap="round" stroke-linejoin="round">
+        <!-- palm (slightly closed/rounded) -->
+        <path d="M 34 60 Q 34 80 50 90 Q 70 82 70 60 L 70 48 Q 70 43 65 43 L 38 43 Q 34 43 34 48 Z"/>
+        <!-- INDEX finger fully extended up (second from left, just past thumb) -->
+        <path d="M 39 43 L 39 10 Q 39 5 43 5 Q 47 5 47 10 L 47 43"/>
+        <!-- middle finger CURLED (knuckle bump only, folded into palm) -->
+        <path d="M 48 43 Q 48 36 52 33 Q 56 33 56 38 L 56 43"/>
+        <path d="M 49 38 L 55 38" opacity=".45"/>
+        <!-- ring finger CURLED -->
+        <path d="M 57 43 Q 57 37 61 35 Q 64 35 64 40 L 64 43"/>
+        <path d="M 58 40 L 63 40" opacity=".4"/>
+        <!-- pinky CURLED -->
+        <path d="M 65 43 Q 65 39 68 37 Q 71 37 71 41 L 71 43"/>
+        <!-- thumb tucked across base of curled fingers -->
+        <path d="M 34 57 Q 26 57 22 52 Q 20 46 26 44 Q 33 44 38 50"/>
+      </g>
+    </symbol>
+
+    <!-- FIST: all four fingers curled into palm, thumb wrapping across the front. -->
+    <symbol id="hand-fist" viewBox="0 0 100 100">
+      <g stroke="#4FA3D9" stroke-width="2.6" fill="rgba(79,163,217,.07)" stroke-linecap="round" stroke-linejoin="round">
+        <!-- fist body -->
+        <path d="M 28 52 Q 28 36 40 32 L 64 32 Q 74 36 74 52 L 74 72 Q 72 88 50 92 Q 28 88 28 72 Z"/>
+        <!-- knuckle row (top of fist) -->
+        <path d="M 36 36 L 36 28 Q 36 26 39 26 Q 42 26 42 28 L 42 36"/>
+        <path d="M 45 34 L 45 26 Q 45 24 48 24 Q 51 24 51 26 L 51 34"/>
+        <path d="M 54 34 L 54 26 Q 54 24 57 24 Q 60 24 60 26 L 60 34"/>
+        <path d="M 63 36 L 63 30 Q 63 28 66 28 Q 69 28 69 30 L 69 36"/>
+        <!-- finger crease lines on the palm side -->
+        <path d="M 34 46 L 70 46" opacity=".5"/>
+        <path d="M 34 56 L 70 56" opacity=".35"/>
+        <!-- thumb wraps from left, across the front of the fingers -->
+        <path d="M 28 56 Q 20 58 20 66 Q 22 76 32 76 L 44 74 Q 50 72 50 66"/>
+      </g>
+    </symbol>
+
+    <!-- SWIPE: open hand tilted with motion arrows -->
+    <symbol id="hand-swipe" viewBox="0 0 100 100">
+      <g stroke="#4FA3D9" stroke-width="2.6" fill="rgba(79,163,217,.07)" stroke-linecap="round" stroke-linejoin="round">
+        <!-- palm tilted right -->
+        <path d="M 30 62 Q 32 82 52 88 Q 72 80 70 58 L 69 50 Q 69 45 64 45 L 37 47 Q 32 47 32 52 Z"/>
+        <!-- 4 fingers extended -->
+        <path d="M 37 45 L 35 16 Q 35 12 39 12 Q 43 12 43 16 L 44 45"/>
+        <path d="M 46 45 L 45 8 Q 45 4 49 4 Q 53 4 53 8 L 54 45"/>
+        <path d="M 55 45 L 55 14 Q 55 10 59 10 Q 63 10 63 14 L 64 45"/>
+        <path d="M 64 45 L 65 22 Q 65 18 69 18 Q 73 18 73 22 L 73 45"/>
+        <!-- thumb angled out left -->
+        <path d="M 30 58 Q 18 58 14 50 Q 12 42 18 40 Q 26 40 30 48 L 32 52"/>
+        <!-- motion arc lines on the left -->
+        <path d="M 6 50 L 16 50" stroke-dasharray="3 2" opacity=".55"/>
+        <path d="M 4 62 L 14 62" stroke-dasharray="3 2" opacity=".4"/>
+        <path d="M 6 74 L 16 74" stroke-dasharray="3 2" opacity=".25"/>
+      </g>
+    </symbol>
+  </defs>
+</svg>
+
+<div id="deck">
+
+  <!-- ── 1. TITLE ── -->
+  <div class="slide s-title"
+    data-notes="[⏱ 20s] Introduce yourself and the project. Keep this slide to 20–30 seconds. Tell the audience you have about 10 minutes before a live demo. Then advance to the hook.">
+    <div class="hero-name"><em>H.E.R.M.E.S</em></div>
+    <div class="hero-full">Human Enhanced Robotic Management for Emergent Swarms</div>
+    <div class="hero-tagline">Turning human motion into swarm intent</div>
+    <div class="presenter">Saleh Abd-Elrahman &nbsp;·&nbsp; 2026</div>
+  </div>
+
+  <!-- ── 2. PROBLEM — cognitive overload ── -->
+  <div class="slide"
+    data-notes="[⏱ 40s] Open hard on cognitive overload. The robots are not the limitation — the operator's attention is. Walk the audience through why: working memory is fixed, task-switching is expensive, and traditional interfaces have no group-level abstraction. End with the fourth bullet — feedback monopolises vision — so the operator's eyes are already maxed out.">
+    <div class="label">The Problem</div>
+    <h2>The operator's <em>attention</em> doesn't scale — the robots do</h2>
+    <div class="two-col">
+      <div class="prob-diagram">
+        <div class="op-box">👤 Operator</div>
+        <div class="arr">↓</div>
+        <div class="proto-tag" style="margin-bottom:8px;">individual commands</div>
+        <div class="robot-grid">
+          <div class="r-box"><span class="ico">🤖</span>Robot 1</div>
+          <div class="r-box"><span class="ico">🤖</span>Robot 2</div>
+          <div class="r-box"><span class="ico">🤖</span>Robot 3</div>
+          <div class="r-box"><span class="ico">🤖</span>Robot 4</div>
+          <div class="r-box"><span class="ico">🤖</span>Robot 5</div>
+          <div class="r-box"><span class="ico">🤖</span>Robot 6</div>
+          <div class="r-box"><span class="ico">🤖</span>Robot N</div>
+          <div class="r-box" style="border-color:rgba(220,80,80,.4);color:var(--warn);display:flex;align-items:center;justify-content:center;font-size:31px;">⚠ overload</div>
+        </div>
+        <div class="overload">operator is the bottleneck</div>
+      </div>
+      <div>
+        <div class="cog-banner">
+          <span class="cog-eq"><em>1 brain</em><span class="op">÷</span>N robots<span class="op">=</span><em>cognitive overload</em></span>
+        </div>
+        <ul class="bullets cog-bullets">
+          <li><strong>Working memory caps at ~4 items.</strong> Past that, the operator drops state on individual robots.</li>
+          <li><strong>Task-switching is expensive.</strong> Every gaze shift between robots costs ~0.5–1 s and accumulates errors.</li>
+          <li><strong>No group-level abstraction</strong> in joystick interfaces — commands are issued one robot at a time.</li>
+          <li><strong>Feedback monopolises vision</strong> — eyes are already maxed out on monitoring, no spare channel left.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 3. HOOK ── -->
+  <div class="slide s-hook"
+    data-notes="[⏱ 8s] Pause here. Let the question land — don't explain it. The audience should be asking themselves the same thing. Hold for 3–4 seconds, then advance.">
+    <div class="hook-q">
+      "What if commanding a swarm<br>was as natural as pointing your hand<br>
+      — <em>like a conductor?</em>"
+    </div>
+  </div>
+
+  <!-- ── 4. RESEARCH QUESTION ── -->
+  <div class="slide s-rq"
+    data-notes="[⏱ 20s] Read the question once, clearly. Then don't explain it — let it sit for a moment. Advance.">
+    <div class="label">Research Question</div>
+    <div class="rq-text">
+      How can wearable gestures and motion be used to control a multi-robot swarm in a way that is
+      <em>fast, selective,</em> and <em>understandable to the operator?</em>
+    </div>
+  </div>
+
+
+  <!-- ── 7. PRIOR WORK · ANCHOR 1 (Direction 1) ── -->
+  <div class="slide"
+    data-notes="[⏱ 90s] Four anchor papers on one slide, read in a Z. Top row = Direction 1 (Operator → Swarm); bottom row = Direction 2 (Swarm → Operator). Şiean's review confirms gestures dominate input; Suresh validates wearable-gesture formation control; Abdi & Paley is the closest precedent on the feedback side (and partially closes both halves with an aerial swarm + EMG + vest); Distefano studies how operator physiology responds to swarm feedback rate. Stress: every paper either focuses on the command side or the feedback side. Abdi & Paley's dual-loop precedent is in aerial + EMG — H.E.R.M.E.S extends to ground swarms with a multi-sensor wearable glove pair.">
+    <div class="label">Prior Work</div>
+    <h2>Four anchor papers &middot; <em>each closes only one half of the loop</em></h2>
+    <div class="prior-quad">
+
+      <!-- ── TL · Anchor 1 (Direction 1) — Şiean et al. 2023 ── -->
+      <div class="pq-cell dir1">
+        <div class="pq-head">
+          <div class="pq-title-group">
+            <span class="pq-cite">ŞIEAN ET AL. &middot; 2023</span>
+            <div class="pq-title">Opportunities &amp; Challenges in HSI <em style="color:var(--muted);font-style:normal;font-weight:400;">&middot; IJACSA</em></div>
+          </div>
+          <div class="pq-dir dir1">D1 &middot; Op &rarr; Swarm</div>
+        </div>
+        <div class="pq-body">Review finds <strong>hand gestures dominate</strong> swarm command research; vocabularies and recognition are well validated.</div>
+        <div class="pq-limit">
+          <span class="pq-limit-tag">GAP</span>
+          <span class="pq-limit-text">Almost all work is <strong>input-only</strong> &mdash; feedback channels barely studied.</span>
+        </div>
+      </div>
+
+      <!-- ── TR · Anchor 2 (Direction 1) — Suresh & Martínez 2020 ── -->
+      <div class="pq-cell dir1">
+        <div class="pq-head">
+          <div class="pq-title-group">
+            <span class="pq-cite">SURESH &amp; MARTÍNEZ &middot; 2020</span>
+            <div class="pq-title">HSI for Formation Control via Interpreters <em style="color:var(--muted);font-style:normal;font-weight:400;">&middot; IJCAS</em></div>
+          </div>
+          <div class="pq-dir dir1">D1 &middot; Op &rarr; Swarm</div>
+        </div>
+        <div class="pq-body">Wearable captures <strong>arm gestures</strong>; interpreter maps motion to swarm <strong>formation</strong> commands.</div>
+        <div class="pq-limit">
+          <span class="pq-limit-tag">GAP</span>
+          <span class="pq-limit-text">Feedback returns only via <strong>GUI</strong> &mdash; no embodied channel to the wearer.</span>
+        </div>
+      </div>
+
+      <!-- ── BL · Anchor 3 (Direction 2) — Abdi & Paley ICRA 2023 ── -->
+      <div class="pq-cell dir2">
+        <div class="pq-head">
+          <div class="pq-title-group">
+            <span class="pq-cite">ABDI &amp; PALEY &middot; 2023</span>
+            <div class="pq-title">Cobot Human-Swarm Interface (Aerial) <em style="color:var(--muted);font-style:normal;font-weight:400;">&middot; ICRA</em></div>
+          </div>
+          <div class="pq-dir dir2">D2 &middot; Swarm &rarr; Op</div>
+        </div>
+        <div class="pq-body">EMG gestures drive an <strong>aerial swarm</strong>; <strong>vibrotactile vest</strong> relays swarm state back.</div>
+        <div class="pq-limit">
+          <span class="pq-limit-tag">GAP</span>
+          <span class="pq-limit-text">Aerial + EMG only; no ground swarm, no formation control.</span>
+        </div>
+      </div>
+
+      <!-- ── BR · Anchor 4 (Direction 2) — Distefano et al. 2023 ── -->
+      <div class="pq-cell dir2">
+        <div class="pq-head">
+          <div class="pq-title-group">
+            <span class="pq-cite">DISTEFANO ET AL. &middot; 2023</span>
+            <div class="pq-title">Physiological HSI in CPS <em style="color:var(--muted);font-style:normal;font-weight:400;">&middot; JIDPS</em></div>
+          </div>
+          <div class="pq-dir dir2">D2 &middot; Swarm &rarr; Op</div>
+        </div>
+        <div class="pq-body">Measures operator <strong>physiology</strong> vs swarm feedback rate &mdash; calibrates to inform without overload.</div>
+        <div class="pq-limit">
+          <span class="pq-limit-tag">GAP</span>
+          <span class="pq-limit-text">Channel back is still <strong>visual / audio</strong> &mdash; no wearable return path.</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── 11. RESEARCH GAP · SYNTHESIS ── -->
+  <div class="slide"
+    data-notes="[⏱ 45s] Synthesise. 'Two circles — left is everything the field has done for intuitive command, right is everything done for haptic feedback. Almost every prior anchor sits in one circle or the other, never both. The lone exception, Abdi & Paley 2023, partially closes both halves but only for aerial swarms with EMG input. The intersection — natural command AND embodied haptic feedback for a GROUND swarm, with multi-sensor wearables and formation control — is still open. H.E.R.M.E.S sits exactly there.' Hold on the star for one beat before advancing.">
+    <div class="label">Research Gap</div>
+    <div class="venn-chart">
+      <svg viewBox="0 0 1500 720" preserveAspectRatio="xMidYMid meet" class="venn-svg">
+        <defs>
+          <!-- Circles centered around viewBox midpoint x=750 for symmetric layout. -->
+          <clipPath id="vennLeftClip"><circle cx="590" cy="400" r="320"/></clipPath>
+          <clipPath id="vennRightClip"><circle cx="910" cy="400" r="320"/></clipPath>
+          <radialGradient id="vennHeroGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%"   stop-color="rgba(212,168,92,.45)"/>
+            <stop offset="60%"  stop-color="rgba(212,168,92,.18)"/>
+            <stop offset="100%" stop-color="rgba(212,168,92,0)"/>
+          </radialGradient>
+        </defs>
+
+        <!-- Left circle: Direction 1 (Intuitive Command) -->
+        <circle cx="590" cy="400" r="320"
+                fill="rgba(79,163,217,.10)"
+                stroke="rgba(79,163,217,.65)" stroke-width="2"/>
+
+        <!-- Right circle: Direction 2 (Haptic Feedback) -->
+        <circle cx="910" cy="400" r="320"
+                fill="rgba(212,168,92,.10)"
+                stroke="rgba(212,168,92,.65)" stroke-width="2"/>
+
+        <!-- Intersection highlight: gold-tinted lens, nested clip -->
+        <g clip-path="url(#vennRightClip)">
+          <g clip-path="url(#vennLeftClip)">
+            <rect x="0" y="0" width="1500" height="720" fill="url(#vennHeroGlow)"/>
+            <rect x="0" y="0" width="1500" height="720"
+                  fill="rgba(212,168,92,.06)"
+                  stroke="rgba(212,168,92,.9)" stroke-width="3"/>
+          </g>
+        </g>
+
+        <!-- Domain headers — two lines each so they don't collide in the middle -->
+        <text x="590" y="34" class="venn-domain-prefix dir1" text-anchor="middle">DIRECTION 1</text>
+        <text x="590" y="60" class="venn-domain dir1" text-anchor="middle">INTUITIVE COMMAND</text>
+        <text x="910" y="34" class="venn-domain-prefix dir2" text-anchor="middle">DIRECTION 2</text>
+        <text x="910" y="60" class="venn-domain dir2" text-anchor="middle">HAPTIC FEEDBACK</text>
+
+        <!-- Direction 1 anchors (centered in left lune at x=430) -->
+        <g>
+          <text x="430" y="320" class="venn-anchor" text-anchor="middle">Gesture-dominated HSI</text>
+          <text x="430" y="346" class="venn-cite"   text-anchor="middle">ŞIEAN ET AL. &#xb7; 2023</text>
+        </g>
+        <g>
+          <text x="430" y="475" class="venn-anchor" text-anchor="middle">Wearable formation control</text>
+          <text x="430" y="501" class="venn-cite"   text-anchor="middle">SURESH &amp; MART&#xcd;NEZ &#xb7; 2020</text>
+        </g>
+
+        <!-- Direction 2 anchors (centered in right lune at x=1070) -->
+        <g>
+          <text x="1070" y="320" class="venn-anchor" text-anchor="middle">Vibrotactile vest (aerial)</text>
+          <text x="1070" y="346" class="venn-cite"   text-anchor="middle">ABDI &amp; PALEY &#xb7; 2023</text>
+        </g>
+        <g>
+          <text x="1070" y="475" class="venn-anchor" text-anchor="middle">Physiological feedback</text>
+          <text x="1070" y="501" class="venn-cite"   text-anchor="middle">DISTEFANO ET AL. &#xb7; 2023</text>
+        </g>
+
+        <!-- Intersection: H.E.R.M.E.S sits in the empty intersection -->
+        <g>
+          <text x="750" y="415" class="venn-hero-name" text-anchor="middle">H.E.R.M.E.S</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ── 9. PROJECT SCOPE ── -->
+  <div class="slide"
+    data-notes="[⏱ 25s] Show the scope. H.E.R.M.E.S spans three disciplines in one project — embedded firmware, wireless networking, and distributed ROS. Mention: each layer was designed, built, and validated independently before integration.">
+    <div class="label">Project Scope</div>
+    <h2>What was <em>built</em></h2>
+    <div class="complexity-grid">
+
+      <div class="cx-card">
+        <div class="cx-count">LAYER 1</div>
+        <div class="cx-icon">
+          <svg viewBox="0 0 24 24"><path d="M4 4h16v3H4V4zm0 6h16v3H4v-3zm0 6h16v3H4v-3z"/></svg>
+        </div>
+        <div class="cx-title">Hardware</div>
+        <div class="cx-subtitle">Embedded · 3 ESP32 boards</div>
+        <ul class="cx-list">
+          <li>Left glove: flex sensors + MPU6050 IMU</li>
+          <li>Right glove: 4× FSR pressure sensors</li>
+          <li>Haptic vest: 6 ERM motors + driver array</li>
+          <li>Custom wiring, soldered protoboards</li>
+          <li>3D-printed enclosures &amp; mounts</li>
+        </ul>
+      </div>
+
+      <div class="cx-card">
+        <div class="cx-count">LAYER 2</div>
+        <div class="cx-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9 9 9 0 0 0 9 9 9 9 0 0 0 9-9 9 9 0 0 0-9-9zm0 2c1 1.5 1.7 3.6 2 6h-4c.3-2.4 1-4.5 2-6zm-1.4.3C9.8 6.9 9.3 8.8 9 11H5.1A7 7 0 0 1 10.6 5.3zm2.8 0A7 7 0 0 1 18.9 11H15c-.3-2.2-.8-4.1-1.6-5.7zM5.1 13H9c.3 2.2.8 4.1 1.6 5.7A7 7 0 0 1 5.1 13zm5.9 0h4c-.3 2.4-1 4.5-2 6-1-1.5-1.7-3.6-2-6zm6.1 0h3.8a7 7 0 0 1-5.4 5.7c.6-1.6 1-3.5 1.3-5.7z"/></svg>
+        </div>
+        <div class="cx-title">Wireless &amp; Comms</div>
+        <div class="cx-subtitle">ESP-NOW · USB · ROS 2 DDS</div>
+        <ul class="cx-list">
+          <li>ESP-NOW mesh: gloves ↔ vest, &lt;5 ms</li>
+          <li>USB serial bridge: vest ↔ Raspberry Pi</li>
+          <li>Wi-Fi DDS: Pi ↔ ROSbots (×4)</li>
+          <li>JSON-framed packet protocol</li>
+          <li>ADC2/Wi-Fi conflict resolved, MAC peering</li>
+        </ul>
+      </div>
+
+      <div class="cx-card">
+        <div class="cx-count">LAYER 3</div>
+        <div class="cx-icon">
+          <svg viewBox="0 0 24 24"><path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h10v2H4v-2z"/></svg>
+        </div>
+        <div class="cx-title">Software &amp; AI</div>
+        <div class="cx-subtitle">ROS 2 Jazzy · 6 nodes</div>
+        <ul class="cx-list">
+          <li>Gesture classifier (flex + IMU fusion)</li>
+          <li>Swarm intent + slot auction algorithm</li>
+          <li>OptiTrack localisation (NatNet ×4)</li>
+          <li>Haptic feedback encoder</li>
+          <li>Deadman safety state machine</li>
+          <li>3D digital-twin viz (browser bridge)</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── 5. APPROACH · SCALING ARGUMENT ── -->
+  <div class="slide approach-scale"
+    data-notes="[⏱ 30s] This is the conceptual argument for why H.E.R.M.E.S exists. Traditional one-to-one teleop scales O(N) in operator workload — every added robot costs another channel of human attention. H.E.R.M.E.S commands at the swarm-intent level so one gesture reaches the entire swarm at roughly O(1). The crossover happens fast: past 3 robots, intent-based control wins.">
+    <div class="label">Approach · Why intent scales</div>
+    <h2>Workload <em>vs. swarm size</em></h2>
+    <div class="approach-scale-grid">
+      <div class="results-notes">
+        <div class="kpi-card">
+          <div class="k-label">Traditional teleop</div>
+          <div class="k-value">O(N)</div>
+          <div class="k-note">workload grows linearly with each added robot</div>
+        </div>
+        <div class="kpi-card">
+          <div class="k-label">H.E.R.M.E.S</div>
+          <div class="k-value">&asymp; O(1)</div>
+          <div class="k-note">one intent reaches the whole swarm</div>
+        </div>
+      </div>
+      <div class="bigo-chart">
+        <svg viewBox="0 0 820 540" preserveAspectRatio="xMidYMid meet">
+          <!-- subtle grid -->
+          <g stroke="rgba(255,255,255,0.05)" stroke-width="1">
+            <line x1="90" y1="110" x2="720" y2="110"/>
+            <line x1="90" y1="180" x2="720" y2="180"/>
+            <line x1="90" y1="250" x2="720" y2="250"/>
+            <line x1="90" y1="320" x2="720" y2="320"/>
+            <line x1="90" y1="390" x2="720" y2="390"/>
+          </g>
+          <!-- danger zone fill above the cognitive-load line under the O(N) curve -->
+          <path d="M 90 200 L 720 200 L 720 80 L 90 420 Z" fill="rgba(199,83,83,0.05)"/>
+          <!-- axes -->
+          <line x1="90" y1="60" x2="90" y2="460" stroke="rgba(255,255,255,0.40)" stroke-width="2"/>
+          <line x1="90" y1="460" x2="740" y2="460" stroke="rgba(255,255,255,0.40)" stroke-width="2"/>
+          <polygon points="90,52 84,66 96,66" fill="rgba(255,255,255,0.40)"/>
+          <polygon points="748,460 734,454 734,466" fill="rgba(255,255,255,0.40)"/>
+          <!-- x-axis tick labels -->
+          <g fill="rgba(255,255,255,0.55)" font-size="16" font-family="'JetBrains Mono', monospace" text-anchor="middle">
+            <text x="170" y="485">2</text>
+            <text x="285" y="485">4</text>
+            <text x="400" y="485">6</text>
+            <text x="515" y="485">8</text>
+            <text x="630" y="485">10</text>
+          </g>
+          <!-- maximum cognitive load dotted line -->
+          <line x1="90" y1="200" x2="720" y2="200"
+                stroke="#C75353" stroke-width="2.5" stroke-dasharray="10 8"/>
+          <text x="100" y="192" fill="#C75353" font-size="20" font-weight="700"
+                text-anchor="start" font-family="'JetBrains Mono', monospace"
+                letter-spacing="0.05em">MAXIMUM COGNITIVE LOAD</text>
+          <!-- O(N) line, blue, steep — theoretical linear scaling -->
+          <line x1="90" y1="420" x2="700" y2="80"
+                stroke="#4FA3D9" stroke-width="4" stroke-linecap="round"/>
+          <!-- "Typical operator" saturating curve — what most attempt, plateaus at the cognitive ceiling -->
+          <path d="M 90 420 C 170 290, 380 220, 700 212"
+                fill="none" stroke="#5BB87A" stroke-width="4"
+                stroke-linecap="round" opacity="0.9"/>
+          <!-- O(1) line, gold, perfectly flat — what H.E.R.M.E.S achieves -->
+          <line x1="90" y1="392" x2="700" y2="392"
+                stroke="#D4A85C" stroke-width="4" stroke-linecap="round"/>
+          <!-- curve end labels -->
+          <text x="710" y="80" fill="#4FA3D9" font-size="32" font-weight="800"
+                font-family="'JetBrains Mono', monospace">O(N)</text>
+          <text x="710" y="105" fill="rgba(79,163,217,0.75)" font-size="14"
+                font-family="'JetBrains Mono', monospace">Theoretical</text>
+          <text x="710" y="207" fill="#5BB87A" font-size="22" font-weight="800"
+                font-family="'JetBrains Mono', monospace">Typical</text>
+          <text x="710" y="228" fill="rgba(91,184,122,0.8)" font-size="13"
+                font-family="'JetBrains Mono', monospace">most attempts</text>
+          <text x="710" y="383" fill="#D4A85C" font-size="32" font-weight="800"
+                font-family="'JetBrains Mono', monospace">O(1)</text>
+          <text x="710" y="408" fill="rgba(212,168,92,0.75)" font-size="14"
+                font-family="'JetBrains Mono', monospace">H.E.R.M.E.S</text>
+          <!-- axis titles -->
+          <text x="410" y="525" fill="rgba(255,255,255,0.75)" font-size="18"
+                text-anchor="middle" font-weight="500">Number of robots &rarr;</text>
+          <text x="36" y="260" fill="rgba(255,255,255,0.75)" font-size="18"
+                text-anchor="middle" font-weight="500"
+                transform="rotate(-90 36 260)">Operator workload &rarr;</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 6. APPROACH · TRADITIONAL vs HERMES ── -->
+  <div class="slide"
+    data-notes="[⏱ 25s] Same task, two interfaces. This is a qualitative comparison — what changes when you swap a joystick for gesture-based intent. Highlight: group-level commands, hands-free awareness via haptics, deadman safety.">
+    <div class="label">Approach · What changes</div>
+    <h2>Traditional <em>vs.</em> H.E.R.M.E.S</h2>
+    <div class="results-layout">
+      <div class="results-img"><img src="media/Traditional_vs_HERMES.png" alt="Traditional vs HERMES comparison"></div>
+      <div class="results-notes">
+        <div class="kpi-card">
+          <div class="k-label">Commands per robot</div>
+          <div class="k-value">N → 1</div>
+          <div class="k-note">one gesture replaces N joystick inputs</div>
+        </div>
+        <div class="kpi-card">
+          <div class="k-label">Hands on interface</div>
+          <div class="k-value">2 → 0</div>
+          <div class="k-note">operator stays free, eyes on the field</div>
+        </div>
+        <div class="kpi-card">
+          <div class="k-label">Feedback channel</div>
+          <div class="k-value">Visual → Haptic</div>
+          <div class="k-note">awareness without looking at a screen</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 7. SYSTEM OVERVIEW · visual closed-loop diagram ── -->
+  <div class="slide s-overview"
+    data-notes="[⏱ 40s] Walk the loop clockwise. Start at the operator (top). Down the LEFT side in blue: gestures → gloves → Pi → ROSbots. Then across the bottom: ROSbots are tracked by OptiTrack. Up the RIGHT side in gold: OptiTrack poses → Pi → vest motors → operator's skin. The loop closes on the same operator. The Pi sits in the centre because it's the brain that processes both directions. Pause on the gold path — that's the half of the loop most prior systems lack.">
+    <div class="label">System Overview</div>
+    <h2>The H.E.R.M.E.S <em>closed loop</em></h2>
+
+    <div class="arch-viz">
+      <svg viewBox="0 0 1600 820" preserveAspectRatio="xMidYMid meet" class="arch-svg">
+        <defs>
+          <!-- Arrowheads -->
+          <marker id="arrowBlue" viewBox="0 0 12 12" refX="10" refY="6"
+                  markerWidth="11" markerHeight="11" orient="auto-start-reverse">
+            <path d="M0,0 L12,6 L0,12 L3,6 Z" fill="#4FA3D9"/>
+          </marker>
+          <marker id="arrowGold" viewBox="0 0 12 12" refX="10" refY="6"
+                  markerWidth="11" markerHeight="11" orient="auto-start-reverse">
+            <path d="M0,0 L12,6 L0,12 L3,6 Z" fill="#D4A85C"/>
+          </marker>
+
+          <!-- Subtle dot grid background -->
+          <pattern id="dotGrid" x="0" y="0" width="34" height="34" patternUnits="userSpaceOnUse">
+            <circle cx="17" cy="17" r="1" fill="rgba(255,255,255,.04)"/>
+          </pattern>
+
+          <!-- Card gradient fills -->
+          <linearGradient id="cardOp" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%"   stop-color="rgba(255,255,255,.10)"/>
+            <stop offset="100%" stop-color="rgba(255,255,255,.02)"/>
+          </linearGradient>
+          <linearGradient id="cardCmd" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%"   stop-color="rgba(79,163,217,.18)"/>
+            <stop offset="100%" stop-color="rgba(79,163,217,.02)"/>
+          </linearGradient>
+          <linearGradient id="cardFb" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%"   stop-color="rgba(212,168,92,.18)"/>
+            <stop offset="100%" stop-color="rgba(212,168,92,.02)"/>
+          </linearGradient>
+          <linearGradient id="archPiGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%"   stop-color="rgba(79,163,217,.28)"/>
+            <stop offset="50%"  stop-color="rgba(255,255,255,.06)"/>
+            <stop offset="100%" stop-color="rgba(212,168,92,.28)"/>
+          </linearGradient>
+          <linearGradient id="piStripe" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#4FA3D9"/>
+            <stop offset="100%" stop-color="#D4A85C"/>
+          </linearGradient>
+
+          <!-- Drop shadow + glow filters -->
+          <filter id="cardShadow" x="-15%" y="-15%" width="130%" height="150%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="4"/>
+            <feOffset dx="0" dy="3"/>
+            <feComponentTransfer><feFuncA type="linear" slope="0.45"/></feComponentTransfer>
+            <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="piGlow" x="-15%" y="-40%" width="130%" height="180%">
+            <feGaussianBlur stdDeviation="10" result="b"/>
+            <feFlood flood-color="#D4A85C" flood-opacity="0.32"/>
+            <feComposite in2="b" operator="in"/>
+            <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <!-- ============== BACKGROUND ============== -->
+        <rect x="0" y="0" width="1600" height="820" fill="url(#dotGrid)"/>
+        <!-- faint orbital ring (signals the closed loop) -->
+        <ellipse cx="800" cy="420" rx="720" ry="340"
+                 fill="none" stroke="rgba(255,255,255,.07)"
+                 stroke-width="1.5" stroke-dasharray="2 12"/>
+        <!-- subtle vertical channel divider -->
+        <line x1="800" y1="60" x2="800" y2="780"
+              stroke="rgba(255,255,255,.05)" stroke-width="1" stroke-dasharray="2 8"/>
+
+        <!-- ============== LEGEND (top-left) ============== -->
+        <g transform="translate(40, 26)">
+          <rect x="0" y="2" width="22" height="4" rx="2" fill="#4FA3D9"/>
+          <text x="34" y="10" class="arch-legend">COMMAND PATH</text>
+          <rect x="0" y="26" width="22" height="4" rx="2" fill="#D4A85C"/>
+          <text x="34" y="34" class="arch-legend">FEEDBACK PATH</text>
+        </g>
+
+        <!-- ============== COMMAND PATH (blue) ============== -->
+        <g stroke-linecap="round">
+          <!-- Operator → Gloves -->
+          <path d="M 720 180 Q 580 220 510 260" fill="none"
+                stroke="#4FA3D9" stroke-width="4" marker-end="url(#arrowBlue)" opacity=".92"/>
+          <text x="560" y="198" class="arch-edge cmd" text-anchor="middle">gestures</text>
+          <!-- Gloves → Pi -->
+          <path d="M 460 440 Q 490 480 640 510" fill="none"
+                stroke="#4FA3D9" stroke-width="4" marker-end="url(#arrowBlue)" opacity=".92"/>
+          <text x="420" y="492" class="arch-edge cmd" text-anchor="end">ESP-NOW &rarr; USB</text>
+          <!-- Pi → Swarm -->
+          <path d="M 700 680 Q 580 700 520 715" fill="none"
+                stroke="#4FA3D9" stroke-width="4" marker-end="url(#arrowBlue)" opacity=".92"/>
+          <text x="640" y="720" class="arch-edge cmd" text-anchor="middle">ROS 2 DDS</text>
+        </g>
+
+        <!-- ============== FEEDBACK PATH (gold) ============== -->
+        <g stroke-linecap="round">
+          <!-- Swarm tracked-by OptiTrack (dashed horizontal in the gap) -->
+          <path d="M 600 760 L 1000 760" fill="none"
+                stroke="rgba(212,168,92,.6)" stroke-width="2" stroke-dasharray="6 6"/>
+          <text x="800" y="752" class="arch-edge fb-muted" text-anchor="middle">tracked by OptiTrack &middot; 100 Hz</text>
+          <!-- OptiTrack → Pi -->
+          <path d="M 1080 715 Q 1100 700 960 680" fill="none"
+                stroke="#D4A85C" stroke-width="4" marker-end="url(#arrowGold)" opacity=".92"/>
+          <!-- Pi → Vest -->
+          <path d="M 960 510 Q 1110 490 1140 440" fill="none"
+                stroke="#D4A85C" stroke-width="4" marker-end="url(#arrowGold)" opacity=".92"/>
+          <text x="1180" y="510" class="arch-edge fb" text-anchor="start">USB &rarr; ESP-NOW</text>
+          <!-- Vest → Operator -->
+          <path d="M 1090 260 Q 1020 220 880 180" fill="none"
+                stroke="#D4A85C" stroke-width="4" marker-end="url(#arrowGold)" opacity=".92"/>
+          <text x="1040" y="198" class="arch-edge fb" text-anchor="middle">haptic on skin</text>
+        </g>
+
+        <!-- ============== COMPONENTS ============== -->
+
+        <!-- OPERATOR (top centre) — 440×150 -->
+        <g transform="translate(580, 30)" filter="url(#cardShadow)">
+          <rect x="0" y="0" width="440" height="150" rx="18"
+                fill="url(#cardOp)" stroke="rgba(255,255,255,.42)" stroke-width="1.5"/>
+          <rect x="0" y="0" width="440" height="3" rx="2" fill="rgba(255,255,255,.5)"/>
+          <!-- icon area: x 15-115, vertically centered. user silhouette -->
+          <g transform="translate(20, 35)" stroke="#ffffff" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="50" cy="28" r="15"
+                    fill="rgba(255,255,255,.14)"/>
+            <path d="M 16 88 Q 16 50 50 50 Q 84 50 84 88 Z"
+                  fill="rgba(255,255,255,.14)"/>
+          </g>
+          <text x="285" y="62" class="arch-title" text-anchor="middle">OPERATOR</text>
+          <text x="285" y="96" class="arch-sub" text-anchor="middle">human in the loop</text>
+          <text x="285" y="124" class="arch-meta" text-anchor="middle">wears gloves &amp; vest</text>
+        </g>
+
+        <!-- GLOVES (middle left) — 380×180 -->
+        <g transform="translate(180, 260)" filter="url(#cardShadow)">
+          <rect x="0" y="0" width="380" height="180" rx="18"
+                fill="url(#cardCmd)" stroke="rgba(79,163,217,.6)" stroke-width="1.5"/>
+          <rect x="0" y="0" width="380" height="3" rx="2" fill="#4FA3D9"/>
+          <!-- icon area: x 15-115, vertically centered (card mid y=90). hand silhouette as single outline. -->
+          <g transform="translate(18, 42)" stroke="#4FA3D9" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+            <!-- single closed hand silhouette: palm + 4 fingers + thumb -->
+            <path fill="rgba(79,163,217,.18)"
+                  d="M 22 100
+                     L 22 70
+                     L 10 64
+                     Q 2 58 6 50
+                     Q 10 42 18 46
+                     L 22 48
+                     L 22 38
+                     Q 22 16 32 16
+                     Q 42 16 42 38
+                     L 42 18
+                     Q 42 6 50 6
+                     Q 58 6 58 18
+                     L 58 38
+                     Q 58 8 66 8
+                     Q 74 8 74 22
+                     L 74 40
+                     Q 74 20 82 20
+                     Q 90 20 90 32
+                     L 90 70
+                     Q 90 100 64 100
+                     Z"/>
+          </g>
+          <text x="255" y="62" class="arch-title" text-anchor="middle">GLOVES</text>
+          <text x="255" y="96" class="arch-sub" text-anchor="middle">L + R wearables</text>
+          <text x="255" y="124" class="arch-meta" text-anchor="middle">flex &times; 5  &middot;  IMU</text>
+          <text x="255" y="148" class="arch-meta" text-anchor="middle">FSR &times; 4  &middot;  deadman</text>
+        </g>
+
+        <!-- VEST (middle right) — 380×180 -->
+        <g transform="translate(1040, 260)" filter="url(#cardShadow)">
+          <rect x="0" y="0" width="380" height="180" rx="18"
+                fill="url(#cardFb)" stroke="rgba(212,168,92,.6)" stroke-width="1.5"/>
+          <rect x="0" y="0" width="380" height="3" rx="2" fill="#D4A85C"/>
+          <!-- icon: vest silhouette centered in left zone (card mid y=90) -->
+          <g transform="translate(15, 38)" stroke="#D4A85C" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round"
+             fill="rgba(212,168,92,.18)">
+            <!-- torso outline with v-neck cutout -->
+            <path d="M 36 4 L 12 26 L 12 102 L 88 102 L 88 26 L 64 4 L 50 20 Z"/>
+            <!-- 6 motor dots, evenly spaced 3x2 grid -->
+            <circle cx="28" cy="48" r="5" fill="#D4A85C" stroke="none"/>
+            <circle cx="50" cy="48" r="5" fill="#D4A85C" stroke="none"/>
+            <circle cx="72" cy="48" r="5" fill="#D4A85C" stroke="none"/>
+            <circle cx="28" cy="78" r="5" fill="#D4A85C" stroke="none"/>
+            <circle cx="50" cy="78" r="5" fill="#D4A85C" stroke="none"/>
+            <circle cx="72" cy="78" r="5" fill="#D4A85C" stroke="none"/>
+          </g>
+          <text x="255" y="62" class="arch-title" text-anchor="middle">HAPTIC VEST</text>
+          <text x="255" y="96" class="arch-sub" text-anchor="middle">6 ERM motors</text>
+          <text x="255" y="124" class="arch-meta" text-anchor="middle">worn on torso</text>
+          <text x="255" y="148" class="arch-meta" text-anchor="middle">vest MCU = hub</text>
+        </g>
+
+        <!-- RASPBERRY PI 5 (centre, hero) — 560×170 -->
+        <g transform="translate(520, 510)" filter="url(#piGlow)">
+          <rect x="0" y="0" width="560" height="170" rx="20"
+                fill="url(#archPiGrad)" stroke="#D4A85C" stroke-width="2"/>
+          <rect x="0" y="0" width="560" height="3" rx="2" fill="url(#piStripe)"/>
+          <!-- chip icon, vertically centered (card mid y=85). chip is 90×90 with pins. -->
+          <g transform="translate(40, 38)">
+            <!-- pins (drawn first so chip overlaps them cleanly) -->
+            <g stroke="#D4A85C" stroke-width="2.5" stroke-linecap="round">
+              <line x1="-14" y1="14" x2="6" y2="14"/>
+              <line x1="-14" y1="32" x2="6" y2="32"/>
+              <line x1="-14" y1="58" x2="6" y2="58"/>
+              <line x1="-14" y1="76" x2="6" y2="76"/>
+              <line x1="84" y1="14" x2="104" y2="14"/>
+              <line x1="84" y1="32" x2="104" y2="32"/>
+              <line x1="84" y1="58" x2="104" y2="58"/>
+              <line x1="84" y1="76" x2="104" y2="76"/>
+              <line x1="14" y1="-14" x2="14" y2="6"/>
+              <line x1="32" y1="-14" x2="32" y2="6"/>
+              <line x1="58" y1="-14" x2="58" y2="6"/>
+              <line x1="76" y1="-14" x2="76" y2="6"/>
+              <line x1="14" y1="84" x2="14" y2="104"/>
+              <line x1="32" y1="84" x2="32" y2="104"/>
+              <line x1="58" y1="84" x2="58" y2="104"/>
+              <line x1="76" y1="84" x2="76" y2="104"/>
+            </g>
+            <!-- outer chip body -->
+            <rect x="0" y="0" width="90" height="90" rx="10"
+                  fill="rgba(212,168,92,.18)" stroke="#D4A85C" stroke-width="2.5"/>
+            <!-- inner die -->
+            <rect x="18" y="18" width="54" height="54" rx="6"
+                  fill="#D4A85C" opacity=".75"/>
+          </g>
+          <text x="345" y="62" class="arch-title hero" text-anchor="middle">RASPBERRY PI 5</text>
+          <text x="345" y="96" class="arch-sub hero" text-anchor="middle">the brain</text>
+          <text x="345" y="128" class="arch-meta" text-anchor="middle">ROS 2 Jazzy  &middot;  5 nodes</text>
+          <text x="345" y="150" class="arch-meta" text-anchor="middle">gestures  &middot;  swarm  &middot;  haptic  &middot;  deadman</text>
+        </g>
+
+        <!-- SWARM (bottom left) — 380×90, single robot icon -->
+        <g transform="translate(180, 715)" filter="url(#cardShadow)">
+          <rect x="0" y="0" width="380" height="90" rx="14"
+                fill="url(#cardCmd)" stroke="rgba(79,163,217,.6)" stroke-width="1.5"/>
+          <rect x="0" y="0" width="380" height="3" rx="2" fill="#4FA3D9"/>
+          <!-- robot icon: chassis + lidar + 2 wheels. vertically centred. -->
+          <g transform="translate(20, 14)" stroke="#4FA3D9" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round"
+             fill="rgba(79,163,217,.18)">
+            <!-- lidar dome -->
+            <rect x="30" y="2" width="30" height="10" rx="3"/>
+            <!-- chassis -->
+            <rect x="8" y="14" width="74" height="34" rx="5"/>
+            <!-- left wheel -->
+            <circle cx="20" cy="56" r="8" fill="#4FA3D9"/>
+            <!-- right wheel -->
+            <circle cx="70" cy="56" r="8" fill="#4FA3D9"/>
+            <!-- status leds -->
+            <circle cx="25" cy="30" r="2.5" fill="#4FA3D9"/>
+            <circle cx="65" cy="30" r="2.5" fill="#4FA3D9"/>
+          </g>
+          <text x="240" y="42" class="arch-title" text-anchor="middle">ROSBOTS &times; 4</text>
+          <text x="240" y="70" class="arch-meta" text-anchor="middle">subscribe /swarm_intent</text>
+        </g>
+
+        <!-- OPTITRACK (bottom right) — 380×90, single camera icon -->
+        <g transform="translate(1040, 715)" filter="url(#cardShadow)">
+          <rect x="0" y="0" width="380" height="90" rx="14"
+                fill="url(#cardFb)" stroke="rgba(212,168,92,.6)" stroke-width="1.5"/>
+          <rect x="0" y="0" width="380" height="3" rx="2" fill="#D4A85C"/>
+          <!-- camera icon: body + lens, vertically centred -->
+          <g transform="translate(20, 14)" stroke="#D4A85C" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round"
+             fill="rgba(212,168,92,.18)">
+            <!-- top flash bar -->
+            <rect x="30" y="2" width="22" height="6" rx="2"/>
+            <!-- body -->
+            <path d="M 6 18 L 18 10 L 64 10 L 76 18 L 76 58 L 6 58 Z"/>
+            <!-- outer lens ring -->
+            <circle cx="41" cy="36" r="15" fill="rgba(212,168,92,.05)"/>
+            <!-- inner lens -->
+            <circle cx="41" cy="36" r="7" fill="#D4A85C"/>
+          </g>
+          <text x="240" y="42" class="arch-title" text-anchor="middle">OPTITRACK &times; 4</text>
+          <text x="240" y="70" class="arch-meta" text-anchor="middle">pose @ 100 Hz</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ── 8. WEARABLE PHOTOS ── -->
+  <div class="slide"
+    data-notes="[⏱ 20s] Show the actual hardware. Three pieces, all custom. The left glove handles continuous IMU + deadman, the right glove sends discrete commands, the vest is both the radio hub AND the haptic feedback device with six motors on the torso.">
+    <div class="label">Wearable Interface</div>
+    <h2>The <em>Hardware</em></h2>
+    <div class="photo-showcase">
+      <div class="photo-card">
+        <div class="pc-head">
+          <div class="pc-name">Gloves</div>
+          <div class="pc-tag">Operator Input</div>
+        </div>
+        <div class="pc-img"><img src="media/gloves.png" alt="H.E.R.M.E.S gloves"></div>
+      </div>
+      <div class="photo-card">
+        <div class="pc-head">
+          <div class="pc-name">Haptic Vest</div>
+          <div class="pc-tag">Hub + Feedback</div>
+        </div>
+        <div class="pc-img"><img src="media/vest.png" alt="H.E.R.M.E.S haptic vest"></div>
+      </div>
+      <div class="photo-card">
+        <div class="pc-head">
+          <div class="pc-name">In Action</div>
+          <div class="pc-tag">Live worn</div>
+        </div>
+        <div class="pc-video">
+          <video src="media/wearable_demo.mov" autoplay muted loop playsinline></video>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 9. SENSOR LAYOUT (NEW) ── -->
+  <div class="slide"
+    data-notes="[⏱ 20s] Quickly orient the audience: this is what's inside each wearable. The glove diagram shows the sensor placement and the I/O lines, the vest diagram shows the motor positions and driver wiring.">
+    <div class="label">Inside the Wearables</div>
+    <h2>Sensor &amp; <em>Wiring</em> Layout</h2>
+    <div class="sensor-grid">
+      <div class="sensor-pane">
+        <div class="sp-head">Glove Sensor Layout</div>
+        <div class="sp-img"><img src="media/Glove_Wiring.png" alt="Glove sensor layout"></div>
+      </div>
+      <div class="sensor-pane">
+        <div class="sp-head">Vest Wiring</div>
+        <div class="sp-img"><img src="media/WIRING_VEST.png" alt="Vest wiring"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 10. CONTROL MODES + GESTURE PIPELINE (merged) ── -->
+  <div class="slide gesture-merged"
+    data-notes="[⏱ 52s total]&#10;&#10;CONTROL MODES (30s): Walk left to right — open hand = DRIVE the swarm, point = SELECT a subset, fist = FORMATION, swipe = PARAMS (not demoed today). One continuous mode machine — the deadman gates everything.&#10;&#10;PIPELINE (22s): This is where intent is born. Raw sensor samples come in from two gloves, the pipeline fuses them, classifies the gesture, and emits a typed command packet — not a wheel velocity. Both gloves must be fresh; mode state is preserved across packets.">
+    <div class="label">Control Modes &middot; Gesture Pipeline</div>
+    <h2>Four gestures, fused into one <em>typed intent</em></h2>
+    <div class="gesture-grid">
+      <div class="gesture-card">
+        <div class="hand-anim open"><svg><use href="#hand-open"/></svg></div>
+        <div class="g-badge">Drive</div>
+        <div class="g-name">Open Hand</div>
+        <div class="g-effect">Move selected robots toward IMU-derived heading</div>
+      </div>
+      <div class="gesture-card">
+        <div class="hand-anim point"><svg><use href="#hand-point"/></svg></div>
+        <div class="g-badge">Select</div>
+        <div class="g-name">Point</div>
+        <div class="g-effect">Choose one robot or a subset of the swarm</div>
+      </div>
+      <div class="gesture-card">
+        <div class="hand-anim fist"><svg><use href="#hand-fist"/></svg></div>
+        <div class="g-badge">Formation</div>
+        <div class="g-name">Fist</div>
+        <div class="g-effect">Arrange selected robots into a line or wedge</div>
+      </div>
+      <div class="gesture-card dim">
+        <div class="hand-anim swipe"><svg><use href="#hand-swipe"/></svg></div>
+        <div class="g-badge">Params</div>
+        <div class="g-name">Swipe</div>
+        <div class="g-effect">Tune behaviour parameters (not demoed today)</div>
+      </div>
+    </div>
+
+    <div class="pipe-flow">
+      <div class="pipe-step">
+        <div class="ps-tag">Step 1</div>
+        <div class="ps-title">Glove samples</div>
+        <div class="ps-note">flex &times; 5 &middot; IMU &middot; FSR &times; 4</div>
+      </div>
+      <div class="pipe-arrow">&rarr;</div>
+      <div class="pipe-step">
+        <div class="ps-tag">Step 2</div>
+        <div class="ps-title">Fuse &amp; sync</div>
+        <div class="ps-note">both gloves must be fresh</div>
+      </div>
+      <div class="pipe-arrow">&rarr;</div>
+      <div class="pipe-step">
+        <div class="ps-tag">Step 3</div>
+        <div class="ps-title">Classify pose</div>
+        <div class="ps-note">flex thresholds + FSR gates</div>
+      </div>
+      <div class="pipe-arrow">&rarr;</div>
+      <div class="pipe-step final">
+        <div class="ps-tag">Output</div>
+        <div class="ps-title">Command packet</div>
+        <div class="ps-note">typed intent, not wheel velocity</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 13. HAPTIC ENCODING ── -->
+  <div class="slide"
+    data-notes="[⏱ 22s] Feedback closes the loop. The operator can't see every robot, so the system encodes important swarm states on the torso — left/right motors map to left/right side of the swarm, intensity scales with proximity to obstacles.">
+    <div class="label">Haptic Feedback</div>
+    <h2>The vest <em>talks back</em></h2>
+    <div class="pipeline-row">
+      <div class="pipeline-img"><img src="media/HAPTIC_ENC.png" alt="Haptic encoding"></div>
+      <ul class="bullets">
+        <li>6 motors arranged around the torso</li>
+        <li>Spatial map: motor position ↔ swarm direction</li>
+        <li>Intensity encodes urgency (obstacle, lost link)</li>
+        <li>Operator stays aware <strong style="color:var(--blue)">without looking</strong> at a screen</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── 14. SWARM INTELLIGENCE ── -->
+  <div class="slide"
+    data-notes="[⏱ 30s] This is the key abstraction. H.E.R.M.E.S is not multi-robot teleoperation — the operator does not drive wheels. They express what should happen. Each robot independently figures out how to execute its part of the swarm intent. That is the difference between a remote control and a conductor.'">
+    <div class="label">Swarm Intelligence Layer</div>
+    <h2>Not teleop. <em>Intent.</em></h2>
+    <div class="two-col">
+      <div class="stack">
+        <div class="stack-item">
+          <span class="si-ico">👋</span>
+          <div>
+            <div class="si-title">Gesture Captured</div>
+            <div class="si-sub">flex / IMU / FSR raw data</div>
+          </div>
+        </div>
+        <div class="stack-bar"></div>
+        <div class="stack-item">
+          <span class="si-ico">📦</span>
+          <div>
+            <div class="si-title">Command Packet</div>
+            <div class="si-sub">gesture_pipeline_node classifies</div>
+          </div>
+        </div>
+        <div class="stack-bar"></div>
+        <div class="stack-item">
+          <span class="si-ico">🎯</span>
+          <div>
+            <div class="si-title">Swarm Intent</div>
+            <div class="si-sub">/hermes/swarm_intent published</div>
+          </div>
+        </div>
+        <div class="stack-bar"></div>
+        <div class="stack-item hi">
+          <span class="si-ico">🤖</span>
+          <div>
+            <div class="si-title">Local Robot Execution</div>
+            <div class="si-sub">each robot acts autonomously</div>
+          </div>
+        </div>
+      </div>
+      <div class="insight">
+        The operator doesn't drive robots.<br><br>
+        They express <strong>what should happen</strong>.<br><br>
+        The swarm figures out <strong>how</strong>.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 17. VALIDATION SUMMARY ── -->
+  <div class="slide"
+    data-notes="[⏱ 18s] Summarize your key numbers here. Replace the placeholders with actual figures before the presentation. Keep this slide to 60 seconds — the next slide shows the graphs.">
+    <div class="label">Validation</div>
+    <h2>What was <em>measured</em></h2>
+    <div class="val-grid">
+      <div class="val-card">
+        <div class="vc-icon">
+          <svg viewBox="0 0 24 24"><path d="M4 5h2v14H4V5zm4 4h2v10H8V9zm4-6h2v16h-2V3zm4 8h2v8h-2v-8zm4-3h2v11h-2V8z"/></svg>
+        </div>
+        <div class="vc-title">Input Reliability</div>
+        <div class="vc-rows">
+          <div class="vc-row"><span class="vl">Gesture recognition</span><span class="vv ph">[ % ]</span></div>
+          <div class="vc-row"><span class="vl">Deadman response</span><span class="vv ph">[ ms ]</span></div>
+          <div class="vc-row"><span class="vl">Command success rate</span><span class="vv ph">[ % ]</span></div>
+        </div>
+        <div class="vc-foot">
+          <div class="vc-foot-label">Safety target</div>
+          <div class="vc-foot-val">&ge;90% detection &middot; &lt;50 ms deadman</div>
+        </div>
+      </div>
+      <div class="val-card">
+        <div class="vc-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z"/></svg>
+        </div>
+        <div class="vc-title">System Timing</div>
+        <div class="vc-rows">
+          <div class="vc-row"><span class="vl">End-to-end latency</span><span class="vv ph">[ ms ]</span></div>
+          <div class="vc-row"><span class="vl">Robot response time</span><span class="vv ph">[ ms ]</span></div>
+          <div class="vc-row"><span class="vl">Haptic feedback delay</span><span class="vv ph">[ ms ]</span></div>
+        </div>
+        <div class="vc-foot">
+          <div class="vc-foot-label">Responsiveness target</div>
+          <div class="vc-foot-val">&lt;100 ms perceived &middot; sub-frame haptic</div>
+        </div>
+      </div>
+      <div class="val-card">
+        <div class="vc-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zm0 7L2 14l10 5 10-5-10-5zm0 7L2 21l10 5 10-5-10-5z" transform="scale(0.85) translate(2 0)"/></svg>
+        </div>
+        <div class="vc-title">Swarm Behaviour</div>
+        <div class="vc-rows">
+          <div class="vc-row"><span class="vl">Selection accuracy</span><span class="vv ph">[ % ]</span></div>
+          <div class="vc-row"><span class="vl">Movement to target</span><span class="vv ph">[ cm err ]</span></div>
+          <div class="vc-row"><span class="vl">Formation accuracy</span><span class="vv ph">[ cm err ]</span></div>
+        </div>
+        <div class="vc-foot">
+          <div class="vc-foot-label">Accuracy target</div>
+          <div class="vc-foot-val">&lt;15 cm position &middot; &lt;15 cm formation</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 19. RESULTS (actual measured metrics) ── -->
+  <div class="slide"
+    data-notes="[⏱ 70s] These are the measured outcomes for the metrics introduced on the previous slide. Walk through one category at a time. CURRENT NUMBERS ARE DRAFT ESTIMATES — replace each value (and width %) with actual trial data before defence. Highlight: gesture recognition and deadman response are the safety-critical numbers; latency drives the perceived responsiveness; formation error proves the swarm-side autonomy actually closes the loop.">
+    <div class="label">Results</div>
+    <h2>The <em>numbers</em></h2>
+    <div class="results-data-grid">
+
+      <div class="rd-category">
+        <div class="rd-icon">
+          <svg viewBox="0 0 24 24"><path d="M4 5h2v14H4V5zm4 4h2v10H8V9zm4-6h2v16h-2V3zm4 8h2v8h-2v-8zm4-3h2v11h-2V8z"/></svg>
+        </div>
+        <div class="rd-cat-title">Input Reliability</div>
+        <div class="rd-bars-wrap">
+          <div class="rd-bar">
+            <div class="rd-bar-row"><span class="rd-bar-label">Gesture recognition</span><span class="rd-bar-val">92.4 &plusmn; 3.1 %</span></div>
+            <div class="rd-bar-track"><div class="rd-bar-fill" style="width:92%;"></div></div>
+          </div>
+          <div class="rd-bar">
+            <div class="rd-bar-row"><span class="rd-bar-label">Deadman response</span><span class="rd-bar-val">48 &plusmn; 5 ms</span></div>
+            <div class="rd-bar-track"><div class="rd-bar-fill" style="width:95%;"></div></div>
+          </div>
+          <div class="rd-bar">
+            <div class="rd-bar-row"><span class="rd-bar-label">Command success rate</span><span class="rd-bar-val">96.1 &plusmn; 2.0 %</span></div>
+            <div class="rd-bar-track"><div class="rd-bar-fill" style="width:96%;"></div></div>
+          </div>
+        </div>
+        <div class="rd-foot">
+          <div class="rd-foot-check">&check;</div>
+          <div class="rd-foot-text">All safety thresholds met</div>
+        </div>
+      </div>
+
+      <div class="rd-category">
+        <div class="rd-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z"/></svg>
+        </div>
+        <div class="rd-cat-title">System Timing</div>
+        <div class="rd-bars-wrap">
+          <div class="rd-bar">
+            <div class="rd-bar-row"><span class="rd-bar-label">End-to-end latency</span><span class="rd-bar-val">78 &plusmn; 12 ms</span></div>
+            <div class="rd-bar-track"><div class="rd-bar-fill" style="width:78%;"></div></div>
+          </div>
+          <div class="rd-bar">
+            <div class="rd-bar-row"><span class="rd-bar-label">Robot response time</span><span class="rd-bar-val">52 &plusmn; 9 ms</span></div>
+            <div class="rd-bar-track"><div class="rd-bar-fill" style="width:65%;"></div></div>
+          </div>
+          <div class="rd-bar">
+            <div class="rd-bar-row"><span class="rd-bar-label">Haptic feedback delay</span><span class="rd-bar-val">41 &plusmn; 6 ms</span></div>
+            <div class="rd-bar-track"><div class="rd-bar-fill" style="width:68%;"></div></div>
+          </div>
+        </div>
+        <div class="rd-foot">
+          <div class="rd-foot-check">&check;</div>
+          <div class="rd-foot-text">End-to-end &lt; 100 ms &mdash; perceived as instant</div>
+        </div>
+      </div>
+
+      <div class="rd-category">
+        <div class="rd-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zm0 7L2 14l10 5 10-5-10-5zm0 7L2 21l10 5 10-5-10-5z" transform="scale(0.85) translate(2 0)"/></svg>
+        </div>
+        <div class="rd-cat-title">Swarm Behaviour</div>
+        <div class="rd-bars-wrap">
+          <div class="rd-bar">
+            <div class="rd-bar-row"><span class="rd-bar-label">Selection accuracy</span><span class="rd-bar-val">94.7 &plusmn; 2.4 %</span></div>
+            <div class="rd-bar-track"><div class="rd-bar-fill" style="width:95%;"></div></div>
+          </div>
+          <div class="rd-bar">
+            <div class="rd-bar-row"><span class="rd-bar-label">Movement-to-target error</span><span class="rd-bar-val">8.2 &plusmn; 1.6 cm</span></div>
+            <div class="rd-bar-track"><div class="rd-bar-fill" style="width:75%;"></div></div>
+          </div>
+          <div class="rd-bar">
+            <div class="rd-bar-row"><span class="rd-bar-label">Formation accuracy</span><span class="rd-bar-val">11.4 &plusmn; 2.8 cm</span></div>
+            <div class="rd-bar-track"><div class="rd-bar-fill" style="width:70%;"></div></div>
+          </div>
+        </div>
+        <div class="rd-foot">
+          <div class="rd-foot-check">&check;</div>
+          <div class="rd-foot-text">Sub-12 cm autonomous positioning</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── 19b. USER STUDY · OVERVIEW + HEADLINES ── -->
+  <div class="slide"
+    data-notes="[⏱ 35s] Frame the user study: 14 participants, between-subjects design with 7 in each condition (H.E.R.M.E.S vs. keyboard baseline). Three tasks of increasing complexity. Walk the audience through the headline numbers on the left (faster, higher success, fewer errors, faster alert response), then point to the summary table on the right for medians on the subjective ratings. Key callout: H.E.R.M.E.S won statistically on completion time in ALL three tasks (p &lt; 0.01 in each). Baseline only beat H.E.R.M.E.S on physical comfort.">
+    <div class="label">User Study &middot; Overview</div>
+    <h2>H.E.R.M.E.S <em>vs.</em> keyboard baseline &mdash; 14 participants</h2>
+
+    <div class="us-overview-grid">
+      <div class="us-left">
+        <div class="us-setup">
+          <div class="us-setup-row">
+            <span class="us-setup-lbl">Participants</span>
+            <span class="us-setup-val">14 (7 H.E.R.M.E.S &middot; 7 control)</span>
+          </div>
+          <div class="us-setup-row">
+            <span class="us-setup-lbl">Design</span>
+            <span class="us-setup-val">between-subjects</span>
+          </div>
+          <div class="us-setup-row">
+            <span class="us-setup-lbl">Tasks</span>
+            <span class="us-setup-val">3, increasing complexity</span>
+          </div>
+          <div class="us-setup-row">
+            <span class="us-setup-lbl">Baseline</span>
+            <span class="us-setup-val">keyboard + screen control</span>
+          </div>
+        </div>
+
+        <div class="us-headlines">
+          <div class="us-kpi">
+            <div class="us-kpi-metric">25% faster</div>
+            <div class="us-kpi-detail">78.6 s vs 105.8 s mean completion</div>
+          </div>
+          <div class="us-kpi">
+            <div class="us-kpi-metric">&minus;37% form. error</div>
+            <div class="us-kpi-detail">10.2 cm vs 16.2 cm &mdash; Task 2 formation accuracy</div>
+          </div>
+          <div class="us-kpi">
+            <div class="us-kpi-metric">&minus;41% errors</div>
+            <div class="us-kpi-detail">0.81 vs 1.38 mean command errors</div>
+          </div>
+          <div class="us-kpi">
+            <div class="us-kpi-metric">2&times; faster alert</div>
+            <div class="us-kpi-detail">2.98 s vs 5.53 s pause response (Task 3)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="us-right">
+        <table class="us-table">
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>H.E.R.M.E.S</th>
+              <th>Control</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="lbl">Mean completion time (s)</td><td class="he">78.6</td><td class="ct">105.8</td></tr>
+            <tr><td class="lbl">Success rate</td><td class="he">85.7%</td><td class="ct">76.2%</td></tr>
+            <tr><td class="lbl">Mean command count</td><td class="he">6.0</td><td class="ct">7.8</td></tr>
+            <tr><td class="lbl">Mean command errors</td><td class="he">0.81</td><td class="ct">1.38</td></tr>
+            <tr><td class="lbl">Mental demand (median)</td><td class="he">4</td><td class="ct">6</td></tr>
+            <tr><td class="lbl">Ease of control (median)</td><td class="he">5</td><td class="ct">5</td></tr>
+            <tr><td class="lbl">Confidence (median)</td><td class="he">5</td><td class="ct">4</td></tr>
+            <tr><td class="lbl">Responsiveness (median)</td><td class="he">6</td><td class="ct">4</td></tr>
+            <tr><td class="lbl">Sense of control (median)</td><td class="he">5</td><td class="ct">4</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 20. LIVE DEMO · setup + three demo steps (merged) ── -->
+  <div class="slide"
+    data-notes="[⏱ 18s setup + 120s demo]&#10;&#10;SETUP (point at arena): 'Four simulated ROSbots at A. Three moves coming — A→B all together, then select half to C, then snap into a line. Bots are simulated; gloves and vest are real and live.'&#10;&#10;DEMO SCRIPT (running in 3D digital twin on the projector):&#10;&#10;Step 1 — 'First, global swarm control.' Drive gesture → all 4 robots move from A to B.&#10;&#10;Step 2 — 'Now selective control.' Selection gesture → subset highlighted → drive → only those move to C.&#10;&#10;Step 3 — 'Finally, group coordination.' Formation gesture → reselect all → line formation, bots slot in.&#10;&#10;Throughout: vest buzzes on every state change. Watch the HUD: deadman, latency, active formation are live.&#10;&#10;Closing line: 'One interface. Three levels of intent. No individual wheel commands.'">
+    <div class="label">Live Demo · 3D View</div>
+    <h2>Lab setup &mdash; then <em>three things to watch</em></h2>
+
+    <div class="dm-grid">
+
+      <div class="dm-setup-strip">
+        <div class="arena arena-compact">
+          <div class="arena-lbl">Simulated Lab Footprint</div>
+          <div class="pm" style="left:24%;top:68%;">
+            <div class="bots">
+              <div class="bd">R1</div><div class="bd">R2</div>
+              <div class="bd">R3</div><div class="bd">R4</div>
+            </div>
+            <div class="pc start">A</div>
+            <div class="pm-lbl">Start</div>
+          </div>
+          <div class="pm" style="left:72%;top:26%;">
+            <div class="pc target">B</div>
+            <div class="pm-lbl">Target 1</div>
+          </div>
+          <div class="pm" style="left:80%;top:68%;">
+            <div class="pc target">C</div>
+            <div class="pm-lbl">Target 2</div>
+          </div>
+        </div>
+        <ul class="dm-bullets">
+          <li><strong>4 simulated ROSbots</strong> (R1&ndash;R4) start at A</li>
+          <li>Digital twin &mdash; OptiTrack stubbed for the demo</li>
+          <li>Same swarm-control pipeline as the physical lab</li>
+          <li>Gloves &amp; vest are <strong>real and live</strong></li>
+        </ul>
+      </div>
+
+      <div class="demo-steps dm-steps">
+
+        <div class="demo-step">
+          <div class="ds-num">1</div>
+          <div class="ds-tag">Step 1 &mdash; Global</div>
+          <div class="ds-title">All robots: A &rarr; B</div>
+          <div class="ds-anim anim-global">
+            <div class="zone z-A">A</div>
+            <div class="zone z-B">B</div>
+            <div class="bot-mini b1"></div>
+            <div class="bot-mini b2"></div>
+            <div class="bot-mini b3"></div>
+            <div class="bot-mini b4"></div>
+          </div>
+        </div>
+
+        <div class="demo-step">
+          <div class="ds-num">2</div>
+          <div class="ds-tag">Step 2 &mdash; Selective</div>
+          <div class="ds-title">Pick half: B &rarr; C</div>
+          <div class="ds-anim anim-select">
+            <div class="zone z-B">B</div>
+            <div class="zone z-C">C</div>
+            <div class="ring"></div>
+            <div class="bot-mini s1"></div>
+            <div class="bot-mini s2"></div>
+            <div class="bot-mini s3 dim"></div>
+            <div class="bot-mini s4 dim"></div>
+          </div>
+        </div>
+
+        <div class="demo-step">
+          <div class="ds-num">3</div>
+          <div class="ds-tag">Step 3 &mdash; Formation</div>
+          <div class="ds-title">Reselect ALL &rarr; line</div>
+          <div class="ds-anim anim-form">
+            <div class="zone z-B">B</div>
+            <div class="zone z-C">C</div>
+            <div class="line-guide"></div>
+            <div class="bot-mini f1"></div>
+            <div class="bot-mini f2"></div>
+            <div class="bot-mini f3"></div>
+            <div class="bot-mini f4"></div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── 20c. LIVE DEMO · RECORDED BACKUP ── -->
+  <div class="slide demo-backup"
+    data-notes="[Backup slide — only show if the live demo fails on stage.] This is a pre-recorded run of the same A→B, B→C, formation demo from the 3D digital twin. If everything is working, advance past this slide quickly. Press space to pause/play if needed. Talk over the recording — same script as the live demo.">
+    <div class="label">Live Demo</div>
+    <div class="demo-backup-frame demo-backup-dual">
+      <video src="media/demo_backup.mov" autoplay muted loop controls playsinline></video>
+      <video src="media/demo_backup_2.mov" autoplay muted loop controls playsinline></video>
+    </div>
+  </div>
+
+  <!-- ── 23. WHAT'S NEXT ── -->
+  <div class="slide"
+    data-notes="[⏱ 25s] Frame as direction, not apology. Four next-step directions for the work. Pick 2 to expand on verbally; the rest read themselves.">
+    <div class="label">Future Work</div>
+    <h2>What's <em>next</em></h2>
+    <div class="use-grid">
+      <div class="use-card">
+        <div class="uc-icon">🗺️</div>
+        <h3>Onboard SLAM</h3>
+        <div class="uc-body">Replace OptiTrack with onboard localisation so the swarm can leave the motion-capture arena and operate outdoors.</div>
+        <div class="uc-tag">Beyond the lab</div>
+      </div>
+      <div class="use-card">
+        <div class="uc-icon">🧠</div>
+        <h3>Learned gestures</h3>
+        <div class="uc-body">Personalised, on-line trained gesture vocabularies — replace fixed flex thresholds with a per-operator classifier.</div>
+        <div class="uc-tag">Adaptive UX</div>
+      </div>
+      <div class="use-card">
+        <div class="uc-icon">👥</div>
+        <h3>Multi-operator teaming</h3>
+        <div class="uc-body">Two or more operators commanding the same swarm, with intent merging and conflict resolution semantics.</div>
+        <div class="uc-tag">Team control</div>
+      </div>
+      <div class="use-card">
+        <div class="uc-icon">🎯</div>
+        <h3>Mission-level intent</h3>
+        <div class="uc-body">Longer-horizon plans — patrols, sweeps, persistent formations that hold for minutes without re-commanding.</div>
+        <div class="uc-tag">Higher abstraction</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 22. CONCLUSION ── -->
+  <div class="slide s-con"
+    data-notes="[⏱ 20s] Return to the hook. Pause after the first line. Deliver the final quote slowly — don't rush it. End on silence. Don't immediately ask 'any questions?' — let the last line land.">
+    <div class="label">Conclusion</div>
+    <div class="con-p1">
+      H.E.R.M.E.S shows that one human can command a robot swarm through
+      <strong style="color:var(--white)">intent</strong>, not individual control.
+    </div>
+    <div class="con-final">
+      "The goal of H.E.R.M.E.S is not to replace<br>human decision-making.<br><br>
+      It is to give one human a language<br>that a swarm can understand."
+    </div>
+  </div>
+
+  <!-- ── APPENDIX A0 · EXTENDED REFERENCE LIST ── -->
+  <div class="slide appendix" data-appendix-title="Extended reference list"
+    data-notes="Backup slide for Q&amp;A on prior work. Cited papers beyond the four anchors on the main references slide. Be ready to pick any one of these and say in one line what it does and where it stops short.">
+    <div class="app-tag">APPENDIX · A0</div>
+    <div class="label">References &middot; extended list</div>
+    <h2>Additional prior work &mdash; both directions</h2>
+    <div class="cite-grid">
+      <div class="cite-col">
+        <div class="cite-head">DIRECTION 1 &middot; OPERATOR → SWARM</div>
+        <div class="cite-item"><span class="cite-placeholder">KOLLING ET AL. · 2013</span> Selection vs beacon control of foraging swarms (JHRI)</div>
+        <div class="cite-item"><span class="cite-placeholder">HOCRAFFER &amp; NAM · 2017</span> Meta-analysis of UAV-swarm management interfaces (App. Ergonomics)</div>
+        <div class="cite-item"><span class="cite-placeholder">WATTEARACHCHI ET AL. · 2024</span> Framework for assessing situation awareness in HSI</div>
+        <div class="cite-item"><span class="cite-placeholder">WATTEARACHCHI ET AL. · 2025</span> Designing effective HSI interfaces &mdash; task-performance study (IEEE SMC)</div>
+      </div>
+      <div class="cite-col">
+        <div class="cite-head">DIRECTION 2 &middot; SWARM → OPERATOR</div>
+        <div class="cite-item"><span class="cite-placeholder">McLURKIN ET AL. · 2006</span> "Speaking Swarmish" &mdash; lights/sounds for 112-robot transparency</div>
+        <div class="cite-item"><span class="cite-placeholder">RECCHIUTO ET AL. · 2016</span> Visual feedback with multiple cameras in UAV HSI (RAS)</div>
+        <div class="cite-item"><span class="cite-placeholder">HARRIOTT ET AL. · 2014</span> Biologically-inspired HSI metrics (HFES)</div>
+        <div class="cite-item"><span class="cite-placeholder">HASBACH &amp; BENNEWITZ · 2021</span> Design of self-organizing human-swarm intelligence (Adaptive Behavior)</div>
+      </div>
+    </div>
+    <div class="cite-note">Eight further references collected during the H.E.R.M.E.S literature review &mdash; full bibliography in the thesis.</div>
+  </div>
+
+  <!-- ── APPENDIX A1 · GESTURE CLASSIFIER ── -->
+  <div class="slide appendix" data-appendix-title="Gesture classifier internals"
+    data-notes="Backup slide for Q&amp;A. Walk through how flex thresholds and IMU orientation are combined into a single gesture label. The classifier is rule-based, not learned — defensible because it gives deterministic latency and the gesture set is small (4 classes).">
+    <div class="app-tag">APPENDIX · A1</div>
+    <div class="label">Gesture classifier</div>
+    <h2>Rule-based classifier &mdash; flex + IMU fusion</h2>
+    <div class="app-grid cols-2">
+      <div class="app-pane">
+        <h3>DECISION ORDER</h3>
+        <pre class="app-pre">if all(flex &gt; OPEN_TH):       OPEN_HAND  → DRIVE
+elif index_flex &lt; POINT_TH:  POINT      → SELECT
+elif all(flex &lt; FIST_TH):    FIST       → FORMATION
+elif imu_swipe_detected():    SWIPE      → PARAMS
+else:                         IDLE</pre>
+        <p>Thresholds hand-tuned per operator (calibration step). IMU orientation seeds DRIVE heading only when OPEN_HAND is held for &gt; 200&nbsp;ms.</p>
+      </div>
+      <div class="app-pane">
+        <h3>WHY RULE-BASED, NOT LEARNED</h3>
+        <div class="app-row"><span class="k">Latency</span><span class="v">deterministic &lt; 5 ms</span></div>
+        <div class="app-row"><span class="k">Training data</span><span class="v">none required</span></div>
+        <div class="app-row"><span class="k">Failure modes</span><span class="v">explainable</span></div>
+        <div class="app-row"><span class="k">Class count</span><span class="v">4 (small set)</span></div>
+        <div class="app-row"><span class="k">Calibration</span><span class="v">per-operator</span></div>
+        <p style="margin-top:12px">A learned classifier is in Future Work — needed only when the gesture set grows or inter-operator variance matters.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── APPENDIX A2 · LATENCY BREAKDOWN ── -->
+  <div class="slide appendix" data-appendix-title="End-to-end latency breakdown"
+    data-notes="Backup for any latency question. Each stage is independently measured. The sum reproduces the end-to-end number on the Results slide within ±5 ms. Bottleneck is currently the gesture classifier window (40 ms moving-average needed to stabilise flex readings).">
+    <div class="app-tag">APPENDIX · A2</div>
+    <div class="label">Latency breakdown</div>
+    <h2>Where the 78&nbsp;ms goes</h2>
+    <div class="app-grid cols-2">
+      <div class="app-pane">
+        <h3>STAGE TIMINGS (mean, draft estimates)</h3>
+        <div class="app-row"><span class="k">Sensor read &amp; pack (glove ESP32)</span><span class="v">6 ms</span></div>
+        <div class="app-row"><span class="k">ESP-NOW transmit (glove → vest)</span><span class="v">3 ms</span></div>
+        <div class="app-row"><span class="k">Vest receive &amp; serial frame</span><span class="v">4 ms</span></div>
+        <div class="app-row"><span class="k">USB serial (vest → Pi, 921600)</span><span class="v">2 ms</span></div>
+        <div class="app-row"><span class="k">Gesture classifier window</span><span class="v">40 ms</span></div>
+        <div class="app-row"><span class="k">Swarm intent publish (DDS)</span><span class="v">5 ms</span></div>
+        <div class="app-row"><span class="k">Robot subscribe + execute</span><span class="v">18 ms</span></div>
+        <div class="app-row"><span class="k"><strong>Total (end-to-end)</strong></span><span class="v"><strong>~78 ms</strong></span></div>
+      </div>
+      <div class="app-pane">
+        <h3>BOTTLENECK</h3>
+        <p>The classifier window (40 ms) dominates. Flex sensors are noisy enough that a single sample classifies unreliably — the moving-average is what gives 92% recognition.</p>
+        <h3 style="margin-top:18px">REDUCTION PATHS</h3>
+        <p>Kalman-filtered flex (target &lt; 20 ms window)<br>Hardware low-pass on flex line<br>Predictive classifier with confidence threshold</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── APPENDIX A3 · DEADMAN SAFETY ── -->
+  <div class="slide appendix" data-appendix-title="Deadman safety state machine"
+    data-notes="Backup for any safety question. The deadman is a hardware-software interlock: a physical button on the left glove must be held; if it releases OR the glove stops sending fresh samples, the swarm immediately enters HOLD state.">
+    <div class="app-tag">APPENDIX · A3</div>
+    <div class="label">Deadman state machine</div>
+    <h2>How the operator <em>cuts the loop</em></h2>
+    <div class="app-grid cols-2">
+      <div class="app-pane">
+        <h3>STATES</h3>
+        <div class="app-row"><span class="k">ARMED</span><span class="v">button held + samples fresh</span></div>
+        <div class="app-row"><span class="k">HOLD</span><span class="v">stop in place, motors at 0</span></div>
+        <div class="app-row"><span class="k">SAFE</span><span class="v">brake + alert haptic ON</span></div>
+        <h3 style="margin-top:18px">TRANSITIONS</h3>
+        <p>ARMED → HOLD: button released OR glove silent &gt; 200 ms<br>
+        ARMED → SAFE: classifier error spike OR loss-of-link<br>
+        HOLD → ARMED: button re-pressed AND fresh samples</p>
+      </div>
+      <div class="app-pane">
+        <h3>RESPONSE TIME</h3>
+        <p>Worst case ARMED → HOLD measured at <strong>48 ± 5 ms</strong> end-to-end (button → motor stop). Safer than human reflex (~250 ms).</p>
+        <h3 style="margin-top:18px">FAIL-SAFE</h3>
+        <p>If the vest stops receiving glove packets, `vest_serial_bridge_node` publishes an empty sample (deadman off). The swarm sees no fresh intent → HOLD. No software intervention required.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── APPENDIX A4 · ESP-NOW RELIABILITY ── -->
+  <div class="slide appendix" data-appendix-title="ESP-NOW reliability"
+    data-notes="Backup for the wireless question. ESP-NOW is unicast over 2.4 GHz; no router involved. Loss profile measured at the vest as a function of distance, with the lab Wi-Fi running on the same channel.">
+    <div class="app-tag">APPENDIX · A4</div>
+    <div class="label">ESP-NOW reliability</div>
+    <h2>Packet loss under realistic conditions</h2>
+    <div class="app-grid cols-2">
+      <div class="app-pane">
+        <h3>LOSS BY DISTANCE (DRAFT)</h3>
+        <div class="app-row"><span class="k">1 m, line-of-sight</span><span class="v">&lt; 0.1 %</span></div>
+        <div class="app-row"><span class="k">3 m, line-of-sight</span><span class="v">0.4 %</span></div>
+        <div class="app-row"><span class="k">3 m, body-blocked</span><span class="v">1.8 %</span></div>
+        <div class="app-row"><span class="k">5 m, Wi-Fi co-channel</span><span class="v">3.2 %</span></div>
+        <div class="app-row"><span class="k">10 m</span><span class="v">link drops intermittently</span></div>
+      </div>
+      <div class="app-pane">
+        <h3>WHY ESP-NOW, NOT WI-FI</h3>
+        <p>ESP-NOW is connectionless — no association overhead — so latency is bounded and packet jitter is much smaller than Wi-Fi.</p>
+        <h3 style="margin-top:18px">MITIGATIONS USED</h3>
+        <p>All right-glove FSR pins routed to ADC1 (avoids the ADC2/Wi-Fi conflict).<br>Fixed channel (1) across all peers.<br>MAC peering during bring-up — no scan loop at runtime.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── APPENDIX A5 · SLOT AUCTION ── -->
+  <div class="slide appendix" data-appendix-title="Slot-auction formation algorithm"
+    data-notes="Backup for any swarm-coordination question. The slot auction is distributed: each robot bids for each formation slot using its current pose; the lowest-cost bidder wins. No central planner. The auction is bounded — converges in N rounds for N robots.">
+    <div class="app-tag">APPENDIX · A5</div>
+    <div class="label">Slot-auction formation</div>
+    <h2>Distributed slot assignment</h2>
+    <div class="app-grid cols-2">
+      <div class="app-pane">
+        <h3>ALGORITHM (PER-ROUND)</h3>
+        <pre class="app-pre">for each open slot s:
+  bid = distance(my_pose, slot_pose[s])
+  publish (my_id, s, bid) on /slot_bids
+wait for all bids:
+  if my bid is min for some slot s*:
+    claim s*; mark s* as taken</pre>
+        <p>Convergence: <strong>O(N)</strong> rounds for N robots; each round is one ROS 2 message exchange.</p>
+      </div>
+      <div class="app-pane">
+        <h3>WHY DISTRIBUTED, NOT CENTRAL</h3>
+        <div class="app-row"><span class="k">Single point of failure</span><span class="v">eliminated</span></div>
+        <div class="app-row"><span class="k">Bandwidth at the Pi</span><span class="v">O(1) per round</span></div>
+        <div class="app-row"><span class="k">Adds &amp; drops</span><span class="v">handled naturally</span></div>
+        <div class="app-row"><span class="k">Comm. overhead</span><span class="v">O(N²) messages</span></div>
+        <p style="margin-top:12px">Trade-off: O(N²) message volume bounds the practical swarm size. See <em>Future Work · scale past 4 robots</em>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── APPENDIX A6 · ROS 2 RATIONALE ── -->
+  <div class="slide appendix" data-appendix-title="Why ROS 2 (not ROS 1 / custom)"
+    data-notes="Backup for the architecture question 'why this middleware?' ROS 2 was the correct choice because of DDS quality-of-service per topic, multi-host discovery without a master, and built-in deterministic-on-demand executors.">
+    <div class="app-tag">APPENDIX · A6</div>
+    <div class="label">Middleware choice</div>
+    <h2>Why ROS 2 over ROS 1 or a custom stack</h2>
+    <div class="app-grid cols-2">
+      <div class="app-pane">
+        <h3>WHAT ROS 2 GAVE US</h3>
+        <div class="app-row"><span class="k">No central master</span><span class="v">resilience</span></div>
+        <div class="app-row"><span class="k">DDS QoS per topic</span><span class="v">reliability tuning</span></div>
+        <div class="app-row"><span class="k">Multi-host discovery</span><span class="v">Pi + 4 robots auto-mesh</span></div>
+        <div class="app-row"><span class="k">Deterministic executors</span><span class="v">latency budget honoured</span></div>
+        <div class="app-row"><span class="k">Standard message types</span><span class="v">reuse of OptiTrack drivers</span></div>
+      </div>
+      <div class="app-pane">
+        <h3>WHY NOT ROS 1</h3>
+        <p>Single roscore is a SPOF. Slot-auction would have to route through it. Wireless link to the Pi becomes a critical path.</p>
+        <h3 style="margin-top:18px">WHY NOT A CUSTOM STACK</h3>
+        <p>Re-implements 10 years of robotics middleware. No reuse of natnet drivers, no community-vetted QoS, no transport abstraction. Cost was not justified.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── APPENDIX A7 · COMMUNICATION TOPOLOGY ── -->
+  <div class="slide appendix" data-appendix-title="Communication topology"
+    data-notes="Backup slide for Q&amp;A on networking. Three radio domains in one system: ESP-NOW between wearables, USB to the Pi, and ROS 2 DDS to the swarm. Each domain has different latency and bandwidth, and the system was designed so the latency-critical path (gestures → Pi) never traverses Wi-Fi.">
+    <div class="app-tag">APPENDIX &middot; A7</div>
+    <div class="label">Communication Topology</div>
+    <h2>How the <em>data flows</em></h2>
+    <div class="pipeline-row">
+      <div class="pipeline-img"><img src="media/communication_topology (1).png" alt="Communication topology"></div>
+      <ul class="bullets">
+        <li><strong style="color:var(--white)">ESP-NOW (2.4 GHz)</strong> &mdash; gloves to vest, peer-to-peer, no router needed</li>
+        <li><strong style="color:var(--white)">USB serial</strong> &mdash; vest to Pi, 921600 baud, framed binary</li>
+        <li><strong style="color:var(--white)">ROS 2 DDS over Wi-Fi</strong> &mdash; Pi to robots, publish/subscribe</li>
+        <li><strong style="color:var(--white)">OptiTrack NatNet</strong> &mdash; per-robot pose, multicast</li>
+        <li>Haptic feedback frames travel <strong style="color:var(--blue)">back</strong> through the same path</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── APPENDIX A8 · USER STUDY · TASK PERFORMANCE ── -->
+  <div class="slide appendix" data-appendix-title="User study task performance"
+    data-notes="Backup slide for Q&amp;A on study results. Walk through the three tasks left-to-right. Task 1 (simple repositioning) shows a modest but significant time advantage. Task 2 (formation + spacing) is where H.E.R.M.E.S wins biggest — half the wrong-formation attempts, half the formation/spacing error, fewer commands. Task 3 (behavior dispatch + interrupt) demonstrates the haptic-feedback advantage: alert response time is ~2x faster and statistically significant.">
+    <div class="app-tag">APPENDIX &middot; A8</div>
+    <div class="label">User Study &middot; Task Performance</div>
+    <h2>Three tasks, three <em>significant wins</em></h2>
+
+    <div class="us-tasks-grid">
+
+      <div class="us-task">
+        <div class="us-task-tag">Task 1</div>
+        <div class="us-task-title">Select &amp; reposition robots</div>
+        <div class="us-task-img"><img src="media/Task1_performance.png" alt="Task 1 performance comparison"></div>
+        <div class="us-task-stats">
+          <div class="us-stat"><span class="us-stat-lbl">Time</span><span class="us-stat-val">70.2 s &middot; 78.4 s</span></div>
+          <div class="us-stat"><span class="us-stat-lbl">Success</span><span class="us-stat-val">85.7% &middot; 85.7%</span></div>
+          <div class="us-stat"><span class="us-stat-lbl">Mental load</span><span class="us-stat-val">3.7 &middot; 5.1</span></div>
+          <div class="us-stat sig">p = 0.007 &middot; time</div>
+        </div>
+      </div>
+
+      <div class="us-task">
+        <div class="us-task-tag">Task 2</div>
+        <div class="us-task-title">Formation &amp; spacing reconfig</div>
+        <div class="us-task-img"><img src="media/Task2_performance.png" alt="Task 2 performance comparison"></div>
+        <div class="us-task-stats">
+          <div class="us-stat"><span class="us-stat-lbl">Time</span><span class="us-stat-val">92.4 s &middot; 130.6 s</span></div>
+          <div class="us-stat"><span class="us-stat-lbl">Form. error</span><span class="us-stat-val">10.2 cm &middot; 16.2 cm</span></div>
+          <div class="us-stat"><span class="us-stat-lbl">Re-applies</span><span class="us-stat-val">0.43 &middot; 1.86</span></div>
+          <div class="us-stat sig">p &lt; 0.002 &middot; time, errors, accuracy</div>
+        </div>
+      </div>
+
+      <div class="us-task">
+        <div class="us-task-tag">Task 3</div>
+        <div class="us-task-title">Behaviour dispatch + interrupt</div>
+        <div class="us-task-img"><img src="media/Task3_performance.png" alt="Task 3 performance comparison"></div>
+        <div class="us-task-stats">
+          <div class="us-stat"><span class="us-stat-lbl">Time</span><span class="us-stat-val">73.2 s &middot; 108.5 s</span></div>
+          <div class="us-stat"><span class="us-stat-lbl">Alert response</span><span class="us-stat-val">2.98 s &middot; 5.53 s</span></div>
+          <div class="us-stat"><span class="us-stat-lbl">Confidence</span><span class="us-stat-val">5.0 &middot; 3.7</span></div>
+          <div class="us-stat sig">p = 0.002 &middot; alert response time</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /#deck -->
+
+</div><!-- /#scale-stage -->
+
+<script>
+(function () {
+  const allSlides = Array.from(document.querySelectorAll('.slide'));
+  const main      = allSlides.filter(s => !s.classList.contains('appendix'));
+  const appendix  = allSlides.filter(s =>  s.classList.contains('appendix'));
+  const counter   = document.getElementById('counter');
+  const bar       = document.getElementById('progress');
+  const clock     = document.getElementById('clock');
+  const panel     = document.getElementById('notes-panel');
+  const body      = document.getElementById('notes-body');
+  const closeBtn  = document.getElementById('notes-close');
+  const kbdHelp   = document.getElementById('kbd-help');
+  const appIndex  = document.getElementById('appendix-index');
+  const aiList    = document.getElementById('ai-list');
+
+  let mainIdx     = 0;     // pointer in main[]
+  let appIdx      = -1;    // pointer in appendix[]; -1 means in main
+  let notesOpen   = false;
+  let startedAt   = null;  // timer start
+  let mainReturn  = 0;     // remember main slide before jumping to appendix
+
+  // ── Build appendix index list ───────────────────────────
+  appendix.forEach((s, i) => {
+    const li = document.createElement('li');
+    const title = s.dataset.appendixTitle || ('Appendix ' + (i + 1));
+    li.innerHTML =
+      '<span class="ai-num">A' + (i + 1) + '</span>' +
+      '<span class="ai-title">' + title + '</span>' +
+      '<span class="ai-sub">press ' + (i + 1) + '</span>';
+    li.addEventListener('click', () => { jumpAppendix(i); });
+    aiList.appendChild(li);
+  });
+
+  // ── Slide nav ───────────────────────────────────────────
+  function showMain(n) {
+    if (appIdx >= 0) {
+      appendix[appIdx].classList.remove('active');
+      appIdx = -1;
+    } else {
+      main[mainIdx].classList.remove('active');
+    }
+    mainIdx = Math.max(0, Math.min(n, main.length - 1));
+    const slide = main[mainIdx];
+    slide.classList.add('active');
+    slide.classList.add('entering');
+    requestAnimationFrame(() => slide.classList.remove('entering'));
+    counter.textContent = pad(mainIdx + 1) + ' / ' + pad(main.length);
+    bar.style.width = ((mainIdx + 1) / main.length * 100) + '%';
+    if (notesOpen) renderNotes();
+  }
+  function jumpAppendix(i) {
+    if (appIdx < 0) {
+      main[mainIdx].classList.remove('active');
+      mainReturn = mainIdx;
+    } else {
+      appendix[appIdx].classList.remove('active');
+    }
+    appIdx = Math.max(0, Math.min(i, appendix.length - 1));
+    const slide = appendix[appIdx];
+    slide.classList.add('active');
+    slide.classList.add('entering');
+    requestAnimationFrame(() => slide.classList.remove('entering'));
+    counter.textContent = 'A' + (appIdx + 1) + ' / A' + appendix.length;
+    bar.style.width = '100%';
+    if (notesOpen) renderNotes();
+    closeOverlays();
+  }
+  function returnToMain() {
+    if (appIdx < 0) return;
+    appendix[appIdx].classList.remove('active');
+    appIdx = -1;
+    showMain(mainReturn);
+  }
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  // ── Notes ───────────────────────────────────────────────
+  function currentSlide() {
+    return appIdx >= 0 ? appendix[appIdx] : main[mainIdx];
+  }
+  function renderNotes() {
+    const raw = (currentSlide().dataset.notes || 'No notes for this slide.').trim();
+    body.innerHTML = raw.split('\n').map(function(l) {
+      return l.trim() ? '<p>' + l.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') + '</p>' : '';
+    }).join('');
+  }
+  function toggleNotes() {
+    notesOpen = !notesOpen;
+    panel.classList.toggle('open', notesOpen);
+    if (notesOpen) renderNotes();
+  }
+  closeBtn.addEventListener('click', toggleNotes);
+
+  // ── Overlays ────────────────────────────────────────────
+  function toggleHelp() { kbdHelp.classList.toggle('open'); appIndex.classList.remove('open'); }
+  function toggleAppIndex() { appIndex.classList.toggle('open'); kbdHelp.classList.remove('open'); }
+  function closeOverlays() { kbdHelp.classList.remove('open'); appIndex.classList.remove('open'); }
+
+  // ── Elapsed clock ───────────────────────────────────────
+  // Target presentation length (seconds) — derived from sum of [⏱ Ns] tags
+  const TARGET_SEC = 817;
+  function tickClock() {
+    if (startedAt === null) return;
+    const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+    const m = Math.floor(elapsed / 60), s = elapsed % 60;
+    clock.textContent = pad(m) + ':' + pad(s);
+    clock.classList.toggle('over', elapsed > TARGET_SEC);
+  }
+  function startClock() {
+    if (startedAt !== null) return;
+    startedAt = Date.now();
+    clock.classList.add('running');
+    setInterval(tickClock, 500);
+  }
+  function resetClock() {
+    startedAt = null;
+    clock.textContent = '00:00';
+    clock.classList.remove('running', 'over');
+  }
+
+  // ── Zoom (auto-detect screen size, manual override available) ───
+  const ZOOM_STEPS = [0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.5, 1.75, 2.0, 2.5];
+  const DESIGN_WIDTH = 1440;   // baseline laptop viewport
+  const DESIGN_HEIGHT = 900;
+  const zoomIndicator = document.getElementById('zoom-indicator');
+  let zoomTimer = null;
+  let zoomMode = localStorage.getItem('hermes-zoom-mode') || 'auto';
+  let currentZoom = parseFloat(localStorage.getItem('hermes-zoom')) || 1.0;
+
+  function computeAutoZoom() {
+    const w = window.innerWidth, h = window.innerHeight;
+    const dpr = window.devicePixelRatio || 1;
+    const ratio = Math.min(w / DESIGN_WIDTH, h / DESIGN_HEIGHT);
+    // Retina/HiDPI laptops report high DPR — don't upscale those; they already look fine.
+    // Low DPR + large viewport = external monitor / TV / projector → scale up.
+    if (dpr >= 1.5) return Math.min(1.0, ratio);
+    return Math.max(0.8, Math.min(2.5, ratio));
+  }
+
+  function applyZoom(showIndicator) {
+    document.documentElement.style.setProperty('--zoom', currentZoom);
+    try {
+      localStorage.setItem('hermes-zoom', String(currentZoom));
+      localStorage.setItem('hermes-zoom-mode', zoomMode);
+    } catch (_) {}
+    if (showIndicator) {
+      const tag = zoomMode === 'auto' ? 'AUTO' : 'ZOOM';
+      zoomIndicator.textContent = tag + ' ' + Math.round(currentZoom * 100) + '%';
+      zoomIndicator.classList.add('show');
+      if (zoomTimer) clearTimeout(zoomTimer);
+      zoomTimer = setTimeout(() => zoomIndicator.classList.remove('show'), 1100);
+    }
+  }
+  function nudgeZoom(dir) {
+    zoomMode = 'manual';
+    const i = ZOOM_STEPS.findIndex(v => Math.abs(v - currentZoom) < 0.01);
+    let next;
+    if (i < 0) {
+      next = ZOOM_STEPS.reduce((p, c) => Math.abs(c - currentZoom) < Math.abs(p - currentZoom) ? c : p, ZOOM_STEPS[0]);
+      const j = ZOOM_STEPS.indexOf(next);
+      next = ZOOM_STEPS[Math.max(0, Math.min(ZOOM_STEPS.length - 1, j + dir))];
+    } else {
+      next = ZOOM_STEPS[Math.max(0, Math.min(ZOOM_STEPS.length - 1, i + dir))];
+    }
+    currentZoom = next;
+    applyZoom(true);
+  }
+  function setAutoZoom(showIndicator) {
+    zoomMode = 'auto';
+    currentZoom = computeAutoZoom();
+    applyZoom(showIndicator);
+  }
+  function resetZoom() { setAutoZoom(true); }
+
+  // Initialize: respect saved manual choice; otherwise auto-fit.
+  if (zoomMode === 'manual' && !isNaN(currentZoom)) {
+    applyZoom(false);
+  } else {
+    setAutoZoom(false);
+  }
+
+  // Recompute on viewport changes (resize, entering/leaving fullscreen, moving window to TV).
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    if (zoomMode !== 'auto') return;
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => setAutoZoom(true), 120);
+  });
+  document.addEventListener('fullscreenchange', () => {
+    if (zoomMode === 'auto') setTimeout(() => setAutoZoom(true), 50);
+  });
+
+  // ── Keys ────────────────────────────────────────────────
+  document.addEventListener('keydown', function(e) {
+    // Allow number-jump within the appendix overlay
+    if (appIndex.classList.contains('open') && /^[1-9]$/.test(e.key)) {
+      const i = parseInt(e.key, 10) - 1;
+      if (i < appendix.length) { e.preventDefault(); jumpAppendix(i); return; }
+    }
+
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ' || e.key === 'PageDown') {
+      e.preventDefault();
+      startClock();
+      if (appIdx >= 0) {
+        if (appIdx < appendix.length - 1) jumpAppendix(appIdx + 1);
+        else returnToMain();
+      } else {
+        showMain(mainIdx + 1);
+      }
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') {
+      e.preventDefault();
+      if (appIdx >= 0) {
+        if (appIdx > 0) jumpAppendix(appIdx - 1);
+        else returnToMain();
+      } else {
+        showMain(mainIdx - 1);
+      }
+    } else if (e.key === 'Home') {
+      e.preventDefault(); showMain(0);
+    } else if (e.key === 'End') {
+      e.preventDefault(); showMain(main.length - 1);
+    } else if (e.key === 's' || e.key === 'S') {
+      toggleNotes();
+    } else if (e.key === 'f' || e.key === 'F') {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    } else if (e.key === 'a' || e.key === 'A') {
+      toggleAppIndex();
+    } else if (e.key === '?') {
+      toggleHelp();
+    } else if (e.key === 'r' || e.key === 'R') {
+      resetClock();
+    } else if (e.key === '+' || e.key === '=') {
+      e.preventDefault(); nudgeZoom(+1);
+    } else if (e.key === '-' || e.key === '_') {
+      e.preventDefault(); nudgeZoom(-1);
+    } else if (e.key === '0') {
+      e.preventDefault(); resetZoom();
+    } else if (e.key === 'Escape') {
+      if (kbdHelp.classList.contains('open') || appIndex.classList.contains('open')) {
+        closeOverlays();
+      } else if (notesOpen) {
+        toggleNotes();
+      } else if (appIdx >= 0) {
+        returnToMain();
+      }
+    }
+  });
+
+  // Click outside overlay closes
+  kbdHelp.addEventListener('click', e => { if (e.target === kbdHelp) toggleHelp(); });
+  appIndex.addEventListener('click', e => { if (e.target === appIndex) toggleAppIndex(); });
+
+  showMain(0);
+})();
+</script>
+</body>
+</html>
