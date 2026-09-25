@@ -49,6 +49,9 @@ def _launch_setup(context, *_args, **_kwargs):
             "serverIP": server_ip,
             "clientIP": client_ip,
             "serverType": server_type,
+            # natnet_ros2 defaults this to "false", which makes it publish no
+            # rigid body poses -- the beacon bridge then has nothing to read.
+            "pub_rigid_body": "true",
         }.items(),
     )
 

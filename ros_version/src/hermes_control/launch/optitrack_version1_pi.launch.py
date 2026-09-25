@@ -10,6 +10,7 @@ def generate_launch_description() -> LaunchDescription:
     server_ip_arg = DeclareLaunchArgument("serverIP", default_value="192.168.0.1")
     client_ip_arg = DeclareLaunchArgument("clientIP", default_value="192.168.0.2")
     server_type_arg = DeclareLaunchArgument("serverType", default_value="multicast")
+    pub_rigid_body_arg = DeclareLaunchArgument("pub_rigid_body", default_value="true")
     optitrack_config_arg = DeclareLaunchArgument(
         "optitrack_config",
         default_value=PathJoinSubstitution(
@@ -25,6 +26,10 @@ def generate_launch_description() -> LaunchDescription:
             "serverIP": LaunchConfiguration("serverIP"),
             "clientIP": LaunchConfiguration("clientIP"),
             "serverType": LaunchConfiguration("serverType"),
+            # natnet_ros2 defaults this to "false" and then publishes no rigid
+            # body poses at all, so the beacon bridge has nothing to subscribe
+            # to. Without it the whole OptiTrack path is silent but error-free.
+            "pub_rigid_body": LaunchConfiguration("pub_rigid_body"),
         }.items(),
     )
 
@@ -41,6 +46,7 @@ def generate_launch_description() -> LaunchDescription:
             server_ip_arg,
             client_ip_arg,
             server_type_arg,
+            pub_rigid_body_arg,
             optitrack_config_arg,
             natnet_launch,
             beacon_bridge,
