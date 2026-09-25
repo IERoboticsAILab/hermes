@@ -1,0 +1,15 @@
+# OptiTrack Version 1: a single NatNet client runs on the Pi and publishes a
+# pose beacon for every robot. The ROSbots run agent-only launches and never
+# talk to Motive, so Motive only ever sees one client -- which is what unicast
+# streaming can actually serve.
+#
+# Order matters: robot_ids[i] is paired with rigid_body_names[i].
+# AIfred_umh is spelled with a capital "I", not a lowercase "L".
+optitrack_pose_beacon_node:
+  ros__parameters:
+    frame_id: optitrack
+    robot_ids: [r1, r2, r3]
+    rigid_body_names: [GAME_Player3, GAME_Player2, AIfred_umh]
+    planar_x_axis: x
+    planar_y_axis: z
+    forward_axis: x
