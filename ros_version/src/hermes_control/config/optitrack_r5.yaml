@@ -5,7 +5,10 @@ optitrack_pose_beacon_node:
     server_type: unicast
     frame_id: optitrack
     planar_x_axis: x
-    planar_y_axis: z
+    # Motive streams Z-up: the floor plane is x/y and z is height. Reading z
+    # here made every robot sit at a constant ~0.21 m (marker height) and hid
+    # all motion along the real y axis.
+    planar_y_axis: y
     forward_axis: x
     robot_id: r5
     rigid_body_name: rosbot_5

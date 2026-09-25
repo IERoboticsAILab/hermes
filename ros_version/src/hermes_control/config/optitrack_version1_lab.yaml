@@ -11,5 +11,8 @@ optitrack_pose_beacon_node:
     robot_ids: [r1, r2, r3]
     rigid_body_names: [GAME_Player3, GAME_Player2, AIfred_umh]
     planar_x_axis: x
-    planar_y_axis: z
+    # Motive streams Z-up: the floor plane is x/y and z is height. Reading z
+    # here made every robot sit at a constant ~0.21 m (marker height) and hid
+    # all motion along the real y axis.
+    planar_y_axis: y
     forward_axis: x
