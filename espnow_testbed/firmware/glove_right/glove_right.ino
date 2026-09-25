@@ -29,10 +29,10 @@ static const uint32_t SERIAL_DEBUG_INTERVAL_MS = 250;
 
 // Use ADC1 pins here. ADC2 pins such as GPIO25/GPIO26/GPIO27/GPIO14
 // conflict with Wi-Fi/ESP-NOW on classic ESP32 boards.
-static const int FSR_INDEX_PIN = 34;
-static const int FSR_MIDDLE_PIN = 35;
-static const int FSR_RING_PIN = 32;
-static const int FSR_PINKY_PIN = 33;
+static const int FSR_INDEX_PIN = 33;
+static const int FSR_MIDDLE_PIN = 32;
+static const int FSR_RING_PIN = 35;
+static const int FSR_PINKY_PIN = 34;
 
 static const int FSR_PRESS_THRESHOLD = 1200;  // ADC threshold, tune for your hardware
 
