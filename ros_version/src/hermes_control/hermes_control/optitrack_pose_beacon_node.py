@@ -5,6 +5,7 @@ from typing import Dict, List, Optional, Tuple
 import rclpy
 from geometry_msgs.msg import PoseStamped
 from rclpy.node import Node
+from rclpy.parameter import Parameter
 from std_msgs.msg import String
 
 
@@ -88,8 +89,11 @@ class OptiTrackPoseBeaconNode(Node):
 
         self.declare_parameter("state_topic", "/hermes/robot_state_beacon")
         self.declare_parameter("frame_id", "optitrack")
-        self.declare_parameter("robot_ids", [])
-        self.declare_parameter("rigid_body_names", [])
+        # Declared by type, not by an empty-list default: rclpy cannot infer a
+        # type from [] and falls back to BYTE_ARRAY, which then rejects the
+        # string lists the multi-robot (Version 1) configs supply.
+        self.declare_parameter("robot_ids", Parameter.Type.STRING_ARRAY)
+        self.declare_parameter("rigid_body_names", Parameter.Type.STRING_ARRAY)
         self.declare_parameter("robot_id", "")
         self.declare_parameter("rigid_body_name", "")
         self.declare_parameter("planar_x_axis", "x")
@@ -104,8 +108,13 @@ class OptiTrackPoseBeaconNode(Node):
         if self._planar_x_axis[-1] == self._planar_y_axis[-1]:
             raise ValueError("planar_x_axis and planar_y_axis must reference different world axes")
 
-        robot_ids = [str(v).strip().lower() for v in list(self.get_parameter("robot_ids").value or []) if str(v).strip()]
-        rigid_body_names = [str(v).strip() for v in list(self.get_parameter("rigid_body_names").value or []) if str(v).strip()]
+        # Single-robot (Version 2) configs leave these unset, which is not an error.
+        def _string_list(name: str) -> List[str]:
+            param = self.get_parameter_or(name, Parameter(name, Parameter.Type.STRING_ARRAY, []))
+            return [str(v) for v in (param.value or [])]
+
+        robot_ids = [v.strip().lower() for v in _string_list("robot_ids") if v.strip()]
+        rigid_body_names = [v.strip() for v in _string_list("rigid_body_names") if v.strip()]
 
         single_robot_id = str(self.get_parameter("robot_id").value).strip().lower()
         single_rigid_body = str(self.get_parameter("rigid_body_name").value).strip()
