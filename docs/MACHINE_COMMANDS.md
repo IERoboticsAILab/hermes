@@ -19,7 +19,7 @@ This is the operator command sheet for the current project layout, filled with t
 
 - `r1` -> hostname `icarus` -> IP `10.205.3.44` -> rigid body `GAME_Player3`
 - `r2` -> hostname `heracles` -> IP `10.205.3.42` -> rigid body `GAME_Player2`
-- `r3` -> hostname `daemon` -> IP `10.205.3.45` -> rigid body `Alfred_umh`
+- `r3` -> hostname `daemon` -> IP `10.205.3.45` -> rigid body `AIfred_umh`
 - `r4` -> unassigned (daemon is now `r3`); `optitrack_r4.yaml` still holds the old daemon values
 - `r5` -> still placeholder in repo -> IP `192.168.0.105` -> rigid body `rosbot_5`
 - `r6` -> still placeholder in repo -> IP `192.168.0.106` -> rigid body `rosbot_6`
@@ -227,7 +227,7 @@ ros2 launch hermes_control robot_agent_optitrack_version2.launch.py \
   cmd_vel_frame_id:=base_link
 ```
 
-### `r3` on `husarion@daemon` (`10.205.3.45`, rigid body `Alfred_umh`)
+### `r3` on `husarion@daemon` (`10.205.3.45`, rigid body `AIfred_umh`)
 
 ```bash
 ros2 launch hermes_control robot_agent_optitrack_version2.launch.py \
@@ -306,7 +306,7 @@ Known rigid bodies in the current mapping:
 ```bash
 /GAME_Player3/pose
 /GAME_Player2/pose
-/Alfred_umh/pose
+/AIfred_umh/pose
 /umh_5/pose
 ```
 
