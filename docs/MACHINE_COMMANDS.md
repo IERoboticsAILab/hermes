@@ -17,10 +17,10 @@ This is the operator command sheet for the current project layout, filled with t
 
 ### ROSbot mapping currently committed in the OptiTrack YAMLs
 
-- `r1` -> hostname `persephone` -> IP `10.205.3.43` -> rigid body `umh_3`
-- `r2` -> hostname `hypnos` -> IP `10.205.3.41` -> rigid body `umh_4`
-- `r3` -> hostname `icarus` -> IP `10.205.3.44` -> rigid body `umh_4_green`
-- `r4` -> hostname `daemon` -> IP `10.205.3.45` -> rigid body `umh_5`
+- `r1` -> hostname `icarus` -> IP `10.205.3.44` -> rigid body `GAME_Player3`
+- `r2` -> hostname `heracles` -> IP `10.205.3.42` -> rigid body `GAME_Player2`
+- `r3` -> hostname `daemon` -> IP `10.205.3.45` -> rigid body `Alfred_umh`
+- `r4` -> unassigned (daemon is now `r3`); `optitrack_r4.yaml` still holds the old daemon values
 - `r5` -> still placeholder in repo -> IP `192.168.0.105` -> rigid body `rosbot_5`
 - `r6` -> still placeholder in repo -> IP `192.168.0.106` -> rigid body `rosbot_6`
 
@@ -205,7 +205,7 @@ Also make sure the ROSbot base stack is already running.
 
 These commands assume the per-robot YAMLs are correct.
 
-### `r1` on `husarion@persephone` (`10.205.3.43`, rigid body `umh_3`)
+### `r1` on `husarion@icarus` (`10.205.3.44`, rigid body `GAME_Player3`)
 
 ```bash
 ros2 launch hermes_control robot_agent_optitrack_version2.launch.py \
@@ -216,7 +216,7 @@ ros2 launch hermes_control robot_agent_optitrack_version2.launch.py \
   cmd_vel_frame_id:=base_link
 ```
 
-### `r2` on `husarion@hypnos` (`10.205.3.41`, rigid body `umh_4`)
+### `r2` on `husarion@heracles` (`10.205.3.42`, rigid body `GAME_Player2`)
 
 ```bash
 ros2 launch hermes_control robot_agent_optitrack_version2.launch.py \
@@ -227,7 +227,7 @@ ros2 launch hermes_control robot_agent_optitrack_version2.launch.py \
   cmd_vel_frame_id:=base_link
 ```
 
-### `r3` on `husarion@icarus` (`10.205.3.44`, rigid body `umh_4_green`)
+### `r3` on `husarion@daemon` (`10.205.3.45`, rigid body `Alfred_umh`)
 
 ```bash
 ros2 launch hermes_control robot_agent_optitrack_version2.launch.py \
@@ -304,9 +304,9 @@ ros2 topic echo /<rigid_body_name>/pose --once
 Known rigid bodies in the current mapping:
 
 ```bash
-/umh_3/pose
-/umh_4/pose
-/umh_4_green/pose
+/GAME_Player3/pose
+/GAME_Player2/pose
+/Alfred_umh/pose
 /umh_5/pose
 ```
 

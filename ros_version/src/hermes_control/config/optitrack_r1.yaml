@@ -1,11 +1,11 @@
 optitrack_pose_beacon_node:
   ros__parameters:
     server_ip: 10.205.3.3
-    client_ip: 10.205.3.43
+    client_ip: 10.205.3.44
     server_type: unicast
     frame_id: optitrack
     planar_x_axis: x
     planar_y_axis: z
     forward_axis: x
     robot_id: r1
-    rigid_body_name: umh_3
+    rigid_body_name: GAME_Player3

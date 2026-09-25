@@ -34,7 +34,13 @@ static const int FSR_MIDDLE_PIN = 32;
 static const int FSR_RING_PIN = 35;
 static const int FSR_PINKY_PIN = 34;
 
-static const int FSR_PRESS_THRESHOLD = 1200;  // ADC threshold, tune for your hardware
+// Per-finger ADC press thresholds. The sensors don't share a resting value
+// (different FSRs, divider resistors and strap tension), so each gets its own.
+// MIDDLE reads pressed at rest with the shared 1200, hence the higher value.
+static const int FSR_INDEX_THRESHOLD = 1200;
+static const int FSR_MIDDLE_THRESHOLD = 2400;
+static const int FSR_RING_THRESHOLD = 1200;
+static const int FSR_PINKY_THRESHOLD = 1200;
 
 uint32_t seq_no = 0;
 uint32_t last_send_ms = 0;
@@ -42,8 +48,8 @@ uint32_t last_debug_tx_ms = 0;
 volatile bool send_in_flight = false;
 uint32_t last_send_start_ms = 0;
 
-bool fsrPressed(int pin) {
-  return analogRead(pin) > FSR_PRESS_THRESHOLD;
+bool fsrPressed(int pin, int threshold) {
+  return analogRead(pin) > threshold;
 }
 
 void onSendStatus(esp_now_send_status_t status) {
@@ -132,10 +138,10 @@ void loop() {
   doc["t"] = now;
 
   JsonObject fsr = doc.createNestedObject("fsr");
-  fsr["INDEX"] = fsrPressed(FSR_INDEX_PIN);
-  fsr["MIDDLE"] = fsrPressed(FSR_MIDDLE_PIN);
-  fsr["RING"] = fsrPressed(FSR_RING_PIN);
-  fsr["PINKY"] = fsrPressed(FSR_PINKY_PIN);
+  fsr["INDEX"] = fsrPressed(FSR_INDEX_PIN, FSR_INDEX_THRESHOLD);
+  fsr["MIDDLE"] = fsrPressed(FSR_MIDDLE_PIN, FSR_MIDDLE_THRESHOLD);
+  fsr["RING"] = fsrPressed(FSR_RING_PIN, FSR_RING_THRESHOLD);
+  fsr["PINKY"] = fsrPressed(FSR_PINKY_PIN, FSR_PINKY_THRESHOLD);
 
   char payload[220];
   size_t len = serializeJson(doc, payload, sizeof(payload));
